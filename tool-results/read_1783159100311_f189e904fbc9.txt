@@ -1,0 +1,857 @@
+     1→package com.apex.root.ui.compose.screens
+     2→
+     3→import androidx.compose.animation.core.*
+     4→import androidx.compose.foundation.background
+     5→import androidx.compose.foundation.clickable
+     6→import androidx.compose.foundation.layout.*
+     7→import androidx.compose.foundation.rememberScrollState
+     8→import androidx.compose.foundation.shape.CircleShape
+     9→import androidx.compose.foundation.shape.RoundedCornerShape
+    10→import androidx.compose.foundation.verticalScroll
+    11→import androidx.compose.material.icons.Icons
+    12→import androidx.compose.material.icons.filled.*
+    13→import androidx.compose.material3.*
+    14→import androidx.compose.runtime.*
+    15→import androidx.compose.ui.Alignment
+    16→import androidx.compose.ui.Modifier
+    17→import androidx.compose.ui.draw.clip
+    18→import androidx.compose.ui.graphics.Color
+    19→import androidx.compose.ui.graphics.vector.ImageVector
+    20→import androidx.compose.ui.input.nestedscroll.nestedScroll
+    21→import androidx.compose.ui.text.font.FontFamily
+    22→import androidx.compose.ui.text.font.FontWeight
+    23→import androidx.compose.ui.text.style.TextOverflow
+    24→import androidx.compose.ui.unit.dp
+    25→import androidx.compose.ui.unit.sp
+    26→import com.apex.root.data.FixRecommendation
+    27→import com.apex.root.domain.model.CureLevel
+    28→import com.apex.root.ui.compose.*
+    29→import com.apex.root.viewmodel.trusted.ApexUiState
+    30→import com.apex.root.viewmodel.trusted.ApexViewModel
+    31→import com.apex.root.viewmodel.trusted.LogEntry
+    32→import com.apex.root.viewmodel.trusted.LogType
+    33→import kotlinx.coroutines.delay
+    34→
+    35→@OptIn(ExperimentalMaterial3Api::class)
+    36→@Composable
+    37→fun DashboardScreen(
+    38→    uiState: ApexUiState,
+    39→    onScan: () -> Unit,
+    40→    onDeepScan: (() -> Unit)? = null,
+    41→    onToggleGameMode: () -> Unit,
+    42→    onApplyCure: (CureLevel) -> Unit,
+    43→    onToggleHwid: () -> Unit,
+    44→    onCreateSandbox: (String) -> Unit,
+    45→    onDestroySandbox: () -> Unit,
+    46→    onRefresh: () -> Unit,
+    47→    onShowRecommendations: (() -> Unit)? = null,
+    48→    onExportReport: (() -> Unit)? = null,
+    49→    onDismissRecommendations: (() -> Unit)? = null,
+    50→    onNavigateToHistory: (() -> Unit)? = null,
+    51→    onNavigateToKernelInfo: (() -> Unit)? = null,
+    52→    onNavigateToBaseline: (() -> Unit)? = null,
+    53→    onNavigateToFeatureTest: (() -> Unit)? = null,
+    54→    onNavigateToTimingChart: (() -> Unit)? = null,
+    55→    onNavigateToWhitelist: (() -> Unit)? = null,
+    56→    onNavigateToConfig: (() -> Unit)? = null,
+    57→    onNavigateToHideMode: (() -> Unit)? = null,
+    58→    onNavigateToAbout: (() -> Unit)? = null,
+    59→    onNavigateToFrida: (() -> Unit)? = null,
+    60→    onNavigateToLSPosed: (() -> Unit)? = null,
+    61→    onNavigateToPermissions: (() -> Unit)? = null,
+    62→    onNavigateToLogs: (() -> Unit)? = null,
+    63→    apexViewModel: ApexViewModel? = null
+    64→) {
+    65→    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    66→    val context = androidx.compose.ui.platform.LocalContext.current
+    67→    var sandboxName by remember { mutableStateOf("game-sandbox") }
+    68→    var cureExpanded by remember { mutableStateOf(false) }
+    69→    var islandExpanded by remember { mutableStateOf(false) }
+    70→    var showExportPreview by remember { mutableStateOf(false) }
+    71→    // 修复：治愈操作确认对话框（防止误触"完全重置"等不可逆操作）
+    72→    var pendingCureLevel by remember { mutableStateOf<CureLevel?>(null) }
+    73→    val snackbarHostState = remember { SnackbarHostState() }
+    74→
+    75→    LaunchedEffect(Unit) {
+    76→        apexViewModel?.snackbarChannel?.collect { event ->
+    77→            snackbarHostState.currentSnackbarData?.dismiss()
+    78→            snackbarHostState.showSnackbar(message = event.message, duration = SnackbarDuration.Short)
+    79→        }
+    80→    }
+    81→
+    82→    // scoreLabel 提到顶层，使 GlassShareReportPreview 也能访问
+    83→    val scoreLabel = when {
+    84→        uiState.riskScore > 60 -> "高风险"
+    85→        uiState.riskScore > 30 -> "有风险"
+    86→        uiState.riskScore > 10 -> "轻度风险"
+    87→        else -> "安全"
+    88→    }
+    89→    LaunchedEffect(Unit) { onRefresh() }
+    90→
+    91→    Scaffold(
+    92→        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    93→        containerColor = Color.Transparent,
+    94→        snackbarHost = {
+    95→            SnackbarHost(hostState = snackbarHostState) { data ->
+    96→                GlassCustomSnackbar(message = data.visuals.message, type = SnackbarType.SUCCESS)
+    97→            }
+    98→        },
+    99→        topBar = {
+   100→            CollapsibleGlassTopBar(
+   101→                title = "APEX Root",
+   102→                collapsedFraction = scrollBehavior.state.collapsedFraction
+   103→            )
+   104→        }
+   105→    ) { padding ->
+   106→        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+   107→            LiquidGlassContainer(fluidColorsDark = PageFluidColors.dashboard, fluidColorsLight = PageFluidColors.dashboardLight) {
+   108→                Column(
+   109→                modifier = Modifier
+   110→                    .fillMaxSize()
+   111→                    .verticalScroll(rememberScrollState()),
+   112→                verticalArrangement = Arrangement.spacedBy(0.dp)
+   113→            ) {
+   114→                if (uiState.isLoading) {
+   115→                    GlassSkeletonCard()
+   116→                    Spacer(Modifier.height(12.dp))
+   117→                }
+   118→
+   119→                // ── 顶部「运行中」状态条：高斯玻璃 + 版本号 + 引擎状态 ──
+   120→                RunningStatusBar(
+   121→                    nativeAvailable = uiState.nativeAvailable,
+   122→                    onNavigateToPermissions = onNavigateToPermissions
+   123→                )
+   124→                Spacer(Modifier.height(12.dp))
+   125→
+   126→                GlassGaugeScoreCard(score = uiState.riskScore, label = scoreLabel)
+   127→
+   128→                Spacer(Modifier.height(12.dp))
+   129→
+   130→                // 运行中状态指示 + 迷你终端日志
+   131→                if (uiState.isScanning || uiState.logs.isNotEmpty()) {
+   132→                    MiniTerminalCard(
+   133→                        isScanning = uiState.isScanning,
+   134→                        logs = uiState.logs,
+   135→                        onNavigateToLogs = onNavigateToLogs
+   136→                    )
+   137→                    Spacer(Modifier.height(12.dp))
+   138→                }
+   139→
+   140→                QuickActionsRow(onScan, onDeepScan, uiState.isScanning)
+   141→
+   142→                Spacer(Modifier.height(16.dp))
+   143→
+   144→                if (uiState.scanResult != "点击扫描开始检测" && !uiState.isScanning) {
+   145→                    ScanResultSection(result = uiState.scanResult)
+   146→
+   147→                    if (uiState.memFingerprintMask != 0 || uiState.selinuxCompromised) {
+   148→                        Spacer(Modifier.height(12.dp))
+   149→                        DeepFindingsSection(uiState = uiState)
+   150→                    }
+   151→
+   152→                    Spacer(Modifier.height(12.dp))
+   153→
+   154→                    if (uiState.showRecommendations && uiState.recommendations.isNotEmpty()) {
+   155→                        RecommendationsSection(uiState.recommendations, onDismissRecommendations)
+   156→                        Spacer(Modifier.height(12.dp))
+   157→                    }
+   158→
+   159→                    ActionButtonsRow(onShowRecommendations, onExportReport)
+   160→                    Spacer(Modifier.height(12.dp))
+   161→
+   162→                    Button(
+   163→                        onClick = { showExportPreview = true },
+   164→                        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+   165→                        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+   166→                        shape = RoundedCornerShape(14.dp),
+   167→                        contentPadding = PaddingValues(vertical = 14.dp)
+   168→                    ) {
+   169→                        Text("一键导出环境安全报告", color = Color.White, fontWeight = FontWeight.SemiBold)
+   170→                    }
+   171→
+   172→                    Spacer(Modifier.height(24.dp))
+   173→                }
+   174→
+   175→                SectionHeader(title = "功能模块")
+   176→                Spacer(Modifier.height(14.dp))
+   177→
+   178→                GlassFeatureCard(
+   179→                    title = "APEX-Cure",
+   180→                    subtitle = "一键修复 Root 痕迹",
+   181→                    icon = Icons.Default.Medication,
+   182→                    accentColor = AccentMint,
+   183→                    expandable = true,
+   184→                    expanded = cureExpanded,
+   185→                    onToggle = { cureExpanded = !cureExpanded }
+   186→                ) {
+   187→                    if (uiState.cureMessage.isNotEmpty()) {
+   188→                        Text(uiState.cureMessage, fontSize = 11.sp, color = AccentMint)
+   189→                        Spacer(Modifier.height(10.dp))
+   190→                    }
+   191→                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   192→                        CureButton("轻度处理", AccentMint) { pendingCureLevel = CureLevel.LIGHT }
+   193→                        CureButton("标准修复", AccentGold) { pendingCureLevel = CureLevel.STANDARD }
+   194→                    }
+   195→                    if (cureExpanded) {
+   196→                        Spacer(Modifier.height(10.dp))
+   197→                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   198→                            CureButton("深度恢复", Color(0xFFFF7043)) { pendingCureLevel = CureLevel.DEEP }
+   199→                            CureButton("完全重置", ErrorRed) { pendingCureLevel = CureLevel.FACTORY }
+   200→                        }
+   201→                        Spacer(Modifier.height(10.dp))
+   202→                        Box(
+   203→                            Modifier.fillMaxWidth()
+   204→                                .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(8.dp))
+   205→                                .padding(12.dp)
+   206→                        ) {
+   207→                            Text("深度修复可能导致系统设置恢复出厂，请谨慎操作",
+   208→                                fontSize = 10.sp, color = TextTertiary)
+   209→                        }
+   210→                    }
+   211→                }
+   212→
+   213→                Spacer(Modifier.height(14.dp))
+   214→
+   215→                GlassFeatureCard(
+   216→                    title = "APEX-Island",
+   217→                    subtitle = "隔离运行敏感应用",
+   218→                    icon = Icons.Default.Lock,
+   219→                    accentColor = AccentBlue,
+   220→                    expandable = true,
+   221→                    expanded = islandExpanded,
+   222→                    onToggle = { islandExpanded = !islandExpanded }
+   223→                ) {
+   224→                    OutlinedTextField(
+   225→                        value = sandboxName, onValueChange = { sandboxName = it },
+   226→                        label = { Text("沙箱名称") },
+   227→                        modifier = Modifier.fillMaxWidth(),
+   228→                        singleLine = true,
+   229→                        colors = OutlinedTextFieldDefaults.colors(
+   230→                            focusedBorderColor = AccentBlue, unfocusedBorderColor = Color.White.copy(alpha = 0.10f),
+   231→                            focusedLabelColor = AccentBlue, unfocusedLabelColor = TextTertiary
+   232→                        ),
+   233→                        shape = RoundedCornerShape(10.dp)
+   234→                    )
+   235→                    Spacer(Modifier.height(10.dp))
+   236→                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   237→                        Button(
+   238→                            onClick = { onCreateSandbox(sandboxName) },
+   239→                            enabled = !uiState.sandboxActive,
+   240→                            colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+   241→                            shape = RoundedCornerShape(10.dp)
+   242→                        ) { Text("创建沙箱") }
+   243→                        OutlinedButton(
+   244→                            onClick = onDestroySandbox, enabled = uiState.sandboxActive,
+   245→                            shape = RoundedCornerShape(10.dp)
+   246→                        ) { Text("销毁沙箱") }
+   247→                    }
+   248→                    if (uiState.sandboxActive) {
+   249→                        Spacer(Modifier.height(8.dp))
+   250→                        Row(verticalAlignment = Alignment.CenterVertically) {
+   251→                            Box(Modifier.size(5.dp).background(AccentMint, CircleShape))
+   252→                            Spacer(Modifier.width(8.dp))
+   253→                            Text("沙箱运行中 (PID: ${uiState.sandboxPid})", fontSize = 11.sp, color = AccentMint)
+   254→                        }
+   255→                    }
+   256→                    if (islandExpanded) {
+   257→                        Spacer(Modifier.height(10.dp))
+   258→                        Box(
+   259→                            Modifier.fillMaxWidth()
+   260→                                .background(Color.White.copy(alpha = 0.03f), RoundedCornerShape(8.dp))
+   261→                                .padding(12.dp)
+   262→                        ) {
+   263→                            Text("隔离沙箱基于 Linux 命名空间实现，提供独立的进程环境",
+   264→                                fontSize = 10.sp, color = TextTertiary)
+   265→                        }
+   266→                    }
+   267→                }
+   268→
+   269→                Spacer(Modifier.height(14.dp))
+   270→
+   271→                GlassFeatureCard(
+   272→                    title = "APEX-Guard",
+   273→                    subtitle = "实时系统完整性监控",
+   274→                    icon = Icons.Default.Shield,
+   275→                    accentColor = AccentPurple
+   276→                ) {
+   277→                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   278→                        Button(
+   279→                            onClick = {
+   280→                                // 修复：原 onClick 为空，现调用 NativeGuard.startGuardian
+   281→                                val ok = com.apex.root.guard.NativeGuard.startGuardian()
+   282→                                val msg = if (ok) "守护进程已启动" else "启动失败：原生库未加载或权限不足"
+   283→                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+   284→                            },
+   285→                            colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+   286→                            shape = RoundedCornerShape(10.dp)
+   287→                        ) { Text("启动守护") }
+   288→                        OutlinedButton(
+   289→                            onClick = {
+   290→                                // 修复：原 onClick 为空，现调用 NativeGuard.checkIntegrity
+   291→                                val ok = com.apex.root.guard.NativeGuard.checkIntegrity()
+   292→                                val msg = if (ok) "系统完整性校验通过" else "检测到完整性异常"
+   293→                                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+   294→                            },
+   295→                            shape = RoundedCornerShape(10.dp)
+   296→                        ) { Text("校验系统") }
+   297→                    }
+   298→                    Spacer(Modifier.height(10.dp))
+   299→                    Row(verticalAlignment = Alignment.CenterVertically) {
+   300→                        Box(Modifier.size(6.dp).background(if (uiState.guardState.enabled) AccentMint else ErrorRed, CircleShape))
+   301→                        Spacer(Modifier.width(10.dp))
+   302→                        Text("${if (uiState.guardState.enabled) "防护中" else "未启动"}",
+   303→                            fontSize = 12.sp, color = TextSecondary)
+   304→                    }
+   305→                }
+   306→
+   307→                Spacer(Modifier.height(14.dp))
+   308→
+   309→                GlassFeatureCard(
+   310→                    title = "游戏模式",
+   311→                    subtitle = "隐藏 Root 状态，畅享游戏",
+   312→                    icon = Icons.Default.VideogameAsset,
+   313→                    accentColor = AccentGold
+   314→                ) {
+   315→                    Row(verticalAlignment = Alignment.CenterVertically) {
+   316→                        Text("状态", fontSize = 13.sp, color = TextSecondary)
+   317→                        Spacer(Modifier.width(8.dp))
+   318→                        Text(if (uiState.gameMode.active) "已激活" else "未激活",
+   319→                            fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+   320→                            color = if (uiState.gameMode.active) AccentMint else TextSecondary)
+   321→                        Spacer(Modifier.weight(1f))
+   322→                        Switch(
+   323→                            checked = uiState.gameMode.active,
+   324→                            onCheckedChange = { onToggleGameMode() },
+   325→                            colors = SwitchDefaults.colors(
+   326→                                checkedThumbColor = AccentPurple,
+   327→                                checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   328→                            )
+   329→                        )
+   330→                    }
+   331→                    if (uiState.gameMode.active) {
+   332→                        Spacer(Modifier.height(10.dp))
+   333→                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+   334→                            Text("进程隐藏: ${uiState.gameMode.hiddenProcesses}", fontSize = 11.sp, color = TextTertiary)
+   335→                            Text("eBPF", fontSize = 11.sp, color = AccentMint)
+   336→                            Text("HWID: ${if (uiState.hwidSpoofed) "已伪装" else "原始"}",
+   337→                                fontSize = 11.sp, color = if (uiState.hwidSpoofed) AccentMint else TextTertiary)
+   338→                        }
+   339→                    }
+   340→                    Spacer(Modifier.height(10.dp))
+   341→                    OutlinedButton(onClick = onToggleHwid, shape = RoundedCornerShape(10.dp)) {
+   342→                        Text(if (uiState.hwidSpoofed) "恢复真实 HWID" else "伪装 HWID")
+   343→                    }
+   344→                }
+   345→
+   346→                Spacer(Modifier.height(20.dp))
+   347→                SectionHeader(title = "安全工具")
+   348→                Spacer(Modifier.height(12.dp))
+   349→
+   350→                // 安全工具 — 3 列网格，统一间距
+   351→                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   352→                    ToolChip("检测历史", Icons.Default.History, AccentPurple, onNavigateToHistory)
+   353→                    ToolChip("内核信息", Icons.Default.Memory, AccentBlue, onNavigateToKernelInfo)
+   354→                    ToolChip("基线对比", Icons.Default.Compare, AccentGold, onNavigateToBaseline)
+   355→                }
+   356→                Spacer(Modifier.height(10.dp))
+   357→                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   358→                    ToolChip("特征测试", Icons.Default.Search, AccentMint, onNavigateToFeatureTest)
+   359→                    ToolChip("时序图表", Icons.Default.Timeline, ErrorRed, onNavigateToTimingChart)
+   360→                    ToolChip("白名单", Icons.Default.CheckCircle, AccentBlue, onNavigateToWhitelist)
+   361→                }
+   362→
+   363→                Spacer(Modifier.height(18.dp))
+   364→                SectionHeader(title = "系统工具")
+   365→                Spacer(Modifier.height(12.dp))
+   366→
+   367→                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   368→                    ToolChip("隐藏模式", Icons.Default.VisibilityOff, AccentPurple, onNavigateToHideMode)
+   369→                    ToolChip("详细配置", Icons.Default.Tune, AccentGold, onNavigateToConfig)
+   370→                    ToolChip("权限中心", Icons.Default.VerifiedUser, AccentMint, onNavigateToPermissions)
+   371→                }
+   372→                Spacer(Modifier.height(10.dp))
+   373→                Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+   374→                    ToolChip("Frida", Icons.Default.BugReport, ErrorRed, onNavigateToFrida)
+   375→                    ToolChip("模块", Icons.Default.Extension, AccentGold, onNavigateToLSPosed)
+   376→                    ToolChip("关于", Icons.Default.Info, AccentMint, onNavigateToAbout)
+   377→                }
+   378→
+   379→                Spacer(Modifier.height(32.dp))
+   380→
+   381→                Row(
+   382→                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+   383→                    verticalAlignment = Alignment.CenterVertically,
+   384→                    horizontalArrangement = Arrangement.Center
+   385→                ) {
+   386→                    Box(Modifier.size(3.dp).background(TextTertiary, CircleShape))
+   387→                    Spacer(Modifier.width(10.dp))
+   388→                    Text("v1.0.3  ·  APEX-Root 全能安全平台",
+   389→                        style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+   390→                }
+   391→
+   392→                Spacer(Modifier.height(32.dp))
+   393→            }
+   394→        }
+   395→
+   396→            if (showExportPreview) {
+   397→                GlassShareReportPreview(
+   398→                    score = uiState.riskScore,
+   399→                    statusLabel = scoreLabel,
+   400→                    statusSummary = "此设备安全架构健全，无权级泄漏，所有指标计算均在 TrustZone 安全沙箱中加密执行。",
+   401→                    onClose = { showExportPreview = false },
+   402→                    onShare = {
+   403→                        showExportPreview = false
+   404→                        onExportReport?.invoke()
+   405→                    }
+   406→                )
+   407→            }
+   408→        }
+   409→
+   410→        // 治愈操作确认对话框
+   411→        pendingCureLevel?.let { level ->
+   412→            val levelInfo = when (level) {
+   413→                CureLevel.LIGHT -> Triple("轻度处理", "清除常见 root 痕迹（su 二进制、临时文件）。风险：低", AccentMint)
+   414→                CureLevel.STANDARD -> Triple("标准修复", "移除 root 框架并恢复 boot 分区。风险：中，需要重启", AccentGold)
+   415→                CureLevel.DEEP -> Triple("深度恢复", "深度清理系统级 root 痕迹，可能影响系统设置。风险：高，需要重启", Color(0xFFFF7043))
+   416→                CureLevel.FACTORY -> Triple("完全重置", "恢复出厂设置，所有数据将被清除。风险：极高，不可逆", ErrorRed)
+   417→            }
+   418→            AlertDialog(
+   419→                onDismissRequest = { pendingCureLevel = null },
+   420→                containerColor = if (LocalIsDarkTheme.current) DeepSurface else Color.White,
+   421→                titleContentColor = if (LocalIsDarkTheme.current) TextPrimary else Color.Black,
+   422→                title = {
+   423→                    Row(verticalAlignment = Alignment.CenterVertically) {
+   424→                        Icon(
+   425→                            Icons.Default.Warning,
+   426→                            contentDescription = null,
+   427→                            tint = levelInfo.third,
+   428→                            modifier = Modifier.size(24.dp)
+   429→                        )
+   430→                        Spacer(Modifier.width(8.dp))
+   431→                        Text("确认${levelInfo.first}", fontWeight = FontWeight.Bold)
+   432→                    }
+   433→                },
+   434→                text = {
+   435→                    Column {
+   436→                        Text(levelInfo.second, fontSize = 14.sp, color = if (LocalIsDarkTheme.current) TextSecondary else Color(0xFF475569))
+   437→                        Spacer(Modifier.height(12.dp))
+   438→                        Text(
+   439→                            "此操作不可撤销，请确保已备份重要数据。",
+   440→                            fontSize = 12.sp,
+   441→                            color = levelInfo.third,
+   442→                            fontWeight = FontWeight.Medium
+   443→                        )
+   444→                    }
+   445→                },
+   446→                confirmButton = {
+   447→                    Button(
+   448→                        onClick = {
+   449→                            onApplyCure(level)
+   450→                            pendingCureLevel = null
+   451→                        },
+   452→                        colors = ButtonDefaults.buttonColors(containerColor = levelInfo.third),
+   453→                        shape = RoundedCornerShape(10.dp)
+   454→                    ) {
+   455→                        Text("确认执行")
+   456→                    }
+   457→                },
+   458→                dismissButton = {
+   459→                    TextButton(onClick = { pendingCureLevel = null }) {
+   460→                        Text("取消")
+   461→                    }
+   462→                }
+   463→            )
+   464→        }
+   465→    }
+   466→}
+   467→
+   468→@Composable
+   469→private fun QuickActionsRow(onScan: () -> Unit, onDeepScan: (() -> Unit)?, isScanning: Boolean) {
+   470→    Row(
+   471→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+   472→        horizontalArrangement = Arrangement.spacedBy(12.dp)
+   473→    ) {
+   474→        Button(
+   475→            onClick = onScan, enabled = !isScanning,
+   476→            modifier = Modifier.weight(1f),
+   477→            shape = RoundedCornerShape(14.dp),
+   478→            colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+   479→            contentPadding = PaddingValues(vertical = 14.dp)
+   480→        ) {
+   481→            if (isScanning) {
+   482→                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = Color.White)
+   483→                Spacer(Modifier.width(8.dp))
+   484→            }
+   485→            Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp))
+   486→            Spacer(Modifier.width(8.dp))
+   487→            Text(if (isScanning) "扫描中..." else "快速检测", fontWeight = FontWeight.SemiBold, letterSpacing = 0.3.sp)
+   488→        }
+   489→        if (onDeepScan != null) {
+   490→            OutlinedButton(
+   491→                onClick = onDeepScan, enabled = !isScanning,
+   492→                modifier = Modifier.weight(1f),
+   493→                shape = RoundedCornerShape(14.dp),
+   494→                contentPadding = PaddingValues(vertical = 14.dp)
+   495→            ) {
+   496→                Icon(Icons.Default.Search, null, Modifier.size(18.dp))
+   497→                Spacer(Modifier.width(8.dp))
+   498→                Text("深度检测", fontWeight = FontWeight.SemiBold, letterSpacing = 0.3.sp)
+   499→            }
+   500→        }
+   501→    }
+   502→}
+   503→
+   504→@Composable
+   505→private fun ScanResultSection(result: String) {
+   506→    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+   507→        SectionHeader(title = "检测结果")
+   508→        Spacer(Modifier.height(10.dp))
+   509→        GlassCard(cornerRadius = 16.dp) {
+   510→            Text(
+   511→                text = result,
+   512→                fontFamily = FontFamily.Monospace,
+   513→                fontSize = 10.sp, color = TermuxGreen.copy(alpha = 0.80f),
+   514→                lineHeight = 16.sp,
+   515→                modifier = Modifier
+   516→                    .fillMaxWidth()
+   517→                    .background(Color.Black.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+   518→                    .padding(12.dp)
+   519→            )
+   520→        }
+   521→    }
+   522→}
+   523→
+   524→@Composable
+   525→private fun DeepFindingsSection(uiState: ApexUiState) {
+   526→    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+   527→        SectionHeader(title = "深度检测发现")
+   528→        Spacer(Modifier.height(10.dp))
+   529→        GlassCard {
+   530→            Column {
+   531→                if (uiState.memFingerprintMask != 0) {
+   532→                    val memLabels = mutableListOf<String>()
+   533→                    if (uiState.memFingerprintMask and 1 != 0) memLabels.add("Magisk")
+   534→                    if (uiState.memFingerprintMask and 2 != 0) memLabels.add("Zygisk")
+   535→                    if (uiState.memFingerprintMask and 4 != 0) memLabels.add("LSPosed")
+   536→                    if (uiState.memFingerprintMask and 8 != 0) memLabels.add("Shamiko")
+   537→                    if (uiState.memFingerprintMask and 16 != 0) memLabels.add("Frida")
+   538→                    GlassFindingItem("内存特征", memLabels.joinToString(", "), AccentGold)
+   539→                }
+   540→                if (uiState.selinuxCompromised) GlassFindingItem("SELinux", "策略异常", ErrorRed)
+   541→                if (uiState.hasShamiko) GlassFindingItem("Shamiko", "检测到隐藏模块", ErrorRed)
+   542→                if (uiState.hasZygiskNext) GlassFindingItem("ZygiskNext", "检测到隐藏模块", ErrorRed)
+   543→                if (uiState.rwxPageCount > 3) GlassFindingItem("RWX 内存页", "${uiState.rwxPageCount} 页", AccentGold)
+   544→                if (uiState.selfCheckIssues.isNotEmpty()) GlassFindingItem("自保护问题", "${uiState.selfCheckIssues.size} 个", ErrorRed)
+   545→            }
+   546→        }
+   547→    }
+   548→}
+   549→
+   550→@Composable
+   551→private fun RecommendationsSection(recommendations: List<FixRecommendation>, onDismiss: (() -> Unit)?) {
+   552→    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+   553→        SectionHeader(title = "修复建议")
+   554→        Spacer(Modifier.height(10.dp))
+   555→        recommendations.forEachIndexed { index, rec ->
+   556→            val priorityColor = when {
+   557→                rec.priority >= 9 -> ErrorRed
+   558→                rec.priority >= 7 -> AccentGold
+   559→                else -> AccentMint
+   560→            }
+   561→            GlassCard(cornerRadius = 16.dp, accentLine = priorityColor) {
+   562→                Row(verticalAlignment = Alignment.CenterVertically) {
+   563→                    Text("${index + 1}. ", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = priorityColor)
+   564→                    Text(rec.titleZh, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = priorityColor)
+   565→                }
+   566→                Spacer(Modifier.height(6.dp))
+   567→                Text(rec.descriptionZh, fontSize = 10.sp, color = TextSecondary)
+   568→                rec.stepsZh.forEach { step ->
+   569→                    Spacer(Modifier.height(3.dp))
+   570→                    Text("  ·  $step", fontSize = 9.sp, color = TextTertiary)
+   571→                }
+   572→            }
+   573→            Spacer(Modifier.height(8.dp))
+   574→        }
+   575→    }
+   576→}
+   577→
+   578→@Composable
+   579→private fun ActionButtonsRow(onShowRecommendations: (() -> Unit)?, onExportReport: (() -> Unit)?) {
+   580→    Row(
+   581→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+   582→        horizontalArrangement = Arrangement.spacedBy(12.dp)
+   583→    ) {
+   584→        if (onShowRecommendations != null) {
+   585→            OutlinedButton(onClick = onShowRecommendations, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) {
+   586→                Icon(Icons.Default.Lightbulb, null, Modifier.size(16.dp))
+   587→                Spacer(Modifier.width(6.dp))
+   588→                Text("修复建议", fontSize = 11.sp)
+   589→            }
+   590→        }
+   591→        if (onExportReport != null) {
+   592→            OutlinedButton(onClick = onExportReport, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) {
+   593→                Icon(Icons.Default.Share, null, Modifier.size(16.dp))
+   594→                Spacer(Modifier.width(6.dp))
+   595→                Text("导出报告", fontSize = 11.sp)
+   596→            }
+   597→        }
+   598→    }
+   599→}
+   600→
+   601→@Composable
+   602→private fun CureButton(label: String, color: Color, onClick: () -> Unit) {
+   603→    Button(
+   604→        onClick = onClick,
+   605→        colors = ButtonDefaults.buttonColors(containerColor = color),
+   606→        modifier = Modifier.height(34.dp),
+   607→        shape = RoundedCornerShape(10.dp),
+   608→        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp)
+   609→    ) {
+   610→        Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.3.sp)
+   611→    }
+   612→}
+   613→
+   614→@Composable
+   615→private fun RowScope.ToolChip(label: String, icon: ImageVector, color: Color, onClick: (() -> Unit)?) {
+   616→    if (onClick == null) return
+   617→    OutlinedButton(
+   618→        onClick = onClick,
+   619→        modifier = Modifier.weight(1f),
+   620→        shape = RoundedCornerShape(12.dp),
+   621→        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+   622→    ) {
+   623→        Icon(icon, null, Modifier.size(14.dp), tint = color)
+   624→        Spacer(Modifier.width(4.dp))
+   625→        Text(label, fontSize = 10.sp, color = color)
+   626→    }
+   627→}
+   628→
+   629→/**
+   630→ * 迷你终端日志卡片 — 内嵌在 Dashboard 中
+   631→ * - 黑色背景 + monospace
+   632→ * - 显示最近 5 条日志
+   633→ * - 运行中时显示脉冲指示
+   634→ * - 点击跳转完整日志页
+   635→ */
+   636→@Composable
+   637→private fun MiniTerminalCard(
+   638→    isScanning: Boolean,
+   639→    logs: List<com.apex.root.viewmodel.trusted.LogEntry>,
+   640→    onNavigateToLogs: (() -> Unit)?
+   641→) {
+   642→    val recentLogs = logs.takeLast(5)
+   643→    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+   644→    val pulseAlpha by infiniteTransition.animateFloat(
+   645→        initialValue = 0.3f, targetValue = 1f,
+   646→        animationSpec = infiniteRepeatable(animation = tween(800), repeatMode = RepeatMode.Reverse),
+   647→        label = "pulse_alpha"
+   648→    )
+   649→
+   650→    Column(
+   651→        modifier = Modifier
+   652→            .fillMaxWidth()
+   653→            .padding(horizontal = 16.dp)
+   654→            .clip(RoundedCornerShape(14.dp))
+   655→            .background(TermuxBg)
+   656→            .clickable { onNavigateToLogs?.invoke() }
+   657→    ) {
+   658→        // 标题栏
+   659→        Row(
+   660→            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+   661→            horizontalArrangement = Arrangement.SpaceBetween,
+   662→            verticalAlignment = Alignment.CenterVertically
+   663→        ) {
+   664→            Row(verticalAlignment = Alignment.CenterVertically) {
+   665→                // 运行中脉冲点
+   666→                Box(
+   667→                    Modifier
+   668→                        .size(8.dp)
+   669→                        .clip(RoundedCornerShape(4.dp))
+   670→                        .background(
+   671→                            if (isScanning) AccentMint.copy(alpha = pulseAlpha) else TextTertiary.copy(alpha = 0.4f)
+   672→                        )
+   673→                )
+   674→                Spacer(Modifier.width(6.dp))
+   675→                Text(
+   676→                    if (isScanning) "RUNNING" else "LOGS",
+   677→                    color = if (isScanning) AccentMint else TextTertiary,
+   678→                    fontSize = 10.sp,
+   679→                    fontFamily = FontFamily.Monospace,
+   680→                    fontWeight = FontWeight.Bold
+   681→                )
+   682→            }
+   683→            Text(
+   684→                "${logs.size} 条",
+   685→                color = Color(0xFF64748B),
+   686→                fontSize = 9.sp,
+   687→                fontFamily = FontFamily.Monospace
+   688→            )
+   689→        }
+   690→
+   691→        // 日志内容
+   692→        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+   693→            if (recentLogs.isEmpty()) {
+   694→                Text(
+   695→                    "$ 等待扫描...",
+   696→                    color = TermuxGreen.copy(alpha = if (isScanning) pulseAlpha else 0.4f),
+   697→                    fontSize = 11.sp,
+   698→                    fontFamily = FontFamily.Monospace
+   699→                )
+   700→            } else {
+   701→                recentLogs.forEach { log ->
+   702→                    val color = when (log.type) {
+   703→                        com.apex.root.viewmodel.trusted.LogType.ERROR -> Color(0xFFEF4444)
+   704→                        com.apex.root.viewmodel.trusted.LogType.WARN -> Color(0xFFF59E0B)
+   705→                        com.apex.root.viewmodel.trusted.LogType.INFO -> Color(0xFFE2E8F0)
+   706→                    }
+   707→                    val tag = when (log.type) {
+   708→                        com.apex.root.viewmodel.trusted.LogType.ERROR -> "E"
+   709→                        com.apex.root.viewmodel.trusted.LogType.WARN -> "W"
+   710→                        com.apex.root.viewmodel.trusted.LogType.INFO -> "I"
+   711→                    }
+   712→                    Text(
+   713→                        "${log.time} [$tag] ${log.message}",
+   714→                        color = color,
+   715→                        fontSize = 10.sp,
+   716→                        fontFamily = FontFamily.Monospace,
+   717→                        maxLines = 1,
+   718→                        overflow = TextOverflow.Ellipsis
+   719→                    )
+   720→                }
+   721→            }
+   722→            // 闪烁光标
+   723→            Text(
+   724→                "$ _",
+   725→                color = TermuxGreen.copy(alpha = pulseAlpha),
+   726→                fontSize = 11.sp,
+   727→                fontFamily = FontFamily.Monospace
+   728→            )
+   729→        }
+   730→        Spacer(Modifier.height(4.dp))
+   731→    }
+   732→}
+   733→
+   734→/**
+   735→ * 顶部「运行中」状态条。
+   736→ *
+   737→ * 高斯玻璃（liquidGlass）+ 圆角的精致状态条，置于主界面顶部：
+   738→ *  - 左侧：脉动绿点 + "运行中" 文本 + 引擎就绪状态
+   739→ *  - 右侧：版本号 + 点击进入权限中心
+   740→ */
+   741→@Composable
+   742→private fun RunningStatusBar(
+   743→    nativeAvailable: Boolean,
+   744→    onNavigateToPermissions: (() -> Unit)?
+   745→) {
+   746→    val context = androidx.compose.ui.platform.LocalContext.current
+   747→    val isDark = LocalIsDarkTheme.current
+   748→
+   749→    // 读取版本号
+   750→    val versionName = remember {
+   751→        try {
+   752→            val pm = context.packageManager
+   753→            pm.getPackageInfo(context.packageName, 0).versionName ?: "1.0.3"
+   754→        } catch (e: Throwable) {
+   755→            "1.0.3"
+   756→        }
+   757→    }
+   758→
+   759→    // 脉动动画
+   760→    val transition = rememberInfiniteTransition(label = "runStatus")
+   761→    val pulseAlpha by transition.animateFloat(
+   762→        initialValue = 0.4f,
+   763→        targetValue = 1f,
+   764→        animationSpec = infiniteRepeatable(
+   765→            animation = tween(900, easing = androidx.compose.animation.core.LinearEasing),
+   766→            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+   767→        ),
+   768→        label = "pulse"
+   769→    )
+   770→    val pulseScale by transition.animateFloat(
+   771→        initialValue = 0.85f,
+   772→        targetValue = 1.15f,
+   773→        animationSpec = infiniteRepeatable(
+   774→            animation = tween(900, easing = androidx.compose.animation.core.LinearEasing),
+   775→            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+   776→        ),
+   777→        label = "pulseScale"
+   778→    )
+   779→
+   780→    Box(
+   781→        modifier = Modifier
+   782→            .fillMaxWidth()
+   783→            .padding(horizontal = 16.dp)
+   784→            .height(52.dp)
+   785→            .clip(RoundedCornerShape(18.dp))
+   786→            .liquidGlass(
+   787→                cornerRadius = 18.dp,
+   788→                baseColor = if (isDark) Color.White.copy(alpha = 0.06f) else Color.Black.copy(alpha = 0.025f)
+   789→            )
+   790→            .clickable(
+   791→                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+   792→                indication = null
+   793→            ) { onNavigateToPermissions?.invoke() }
+   794→            .padding(horizontal = 16.dp),
+   795→        contentAlignment = Alignment.CenterStart
+   796→    ) {
+   797→        Row(
+   798→            modifier = Modifier.fillMaxWidth(),
+   799→            verticalAlignment = Alignment.CenterVertically
+   800→        ) {
+   801→            // 脉动状态点
+   802→            Box(
+   803→                modifier = Modifier.size((10 * pulseScale).dp),
+   804→                contentAlignment = Alignment.Center
+   805→            ) {
+   806→                Box(
+   807→                    Modifier
+   808→                        .size(8.dp)
+   809→                        .background(AccentMint.copy(alpha = pulseAlpha), CircleShape)
+   810→                )
+   811→            }
+   812→            Spacer(Modifier.width(10.dp))
+   813→            // 运行中
+   814→            Text(
+   815→                "运行中",
+   816→                fontSize = 14.sp,
+   817→                fontWeight = FontWeight.SemiBold,
+   818→                color = TextPrimary
+   819→            )
+   820→            Spacer(Modifier.width(8.dp))
+   821→            // 引擎状态
+   822→            Box(
+   823→                Modifier
+   824→                    .clip(RoundedCornerShape(6.dp))
+   825→                    .background(
+   826→                        if (nativeAvailable) AccentMint.copy(alpha = 0.14f) else AccentGold.copy(alpha = 0.14f)
+   827→                    )
+   828→                    .padding(horizontal = 7.dp, vertical = 2.dp)
+   829→            ) {
+   830→                Text(
+   831→                    if (nativeAvailable) "引擎就绪" else "引擎降级",
+   832→                    fontSize = 10.sp,
+   833→                    fontWeight = FontWeight.Medium,
+   834→                    color = if (nativeAvailable) AccentMint else AccentGold
+   835→                )
+   836→            }
+   837→            Spacer(Modifier.weight(1f))
+   838→            // 版本号
+   839→            Row(verticalAlignment = Alignment.CenterVertically) {
+   840→                Text(
+   841→                    "v$versionName",
+   842→                    fontSize = 12.sp,
+   843→                    color = TextTertiary,
+   844→                    fontFamily = FontFamily.Monospace
+   845→                )
+   846→                Spacer(Modifier.width(8.dp))
+   847→                Icon(
+   848→                    Icons.Default.ChevronRight,
+   849→                    contentDescription = "权限中心",
+   850→                    tint = TextTertiary,
+   851→                    modifier = Modifier.size(18.dp)
+   852→                )
+   853→            }
+   854→        }
+   855→    }
+   856→}
+   857→

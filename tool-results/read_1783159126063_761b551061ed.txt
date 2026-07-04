@@ -1,0 +1,2002 @@
+     1→@file:OptIn(ExperimentalMaterial3Api::class)
+     2→
+     3→package com.apex.root.ui.compose.screens
+     4→
+     5→import androidx.compose.foundation.clickable
+     6→import androidx.compose.foundation.layout.*
+     7→import androidx.compose.foundation.rememberScrollState
+     8→import androidx.compose.foundation.shape.RoundedCornerShape
+     9→import androidx.compose.foundation.verticalScroll
+    10→import androidx.compose.material.icons.Icons
+    11→import androidx.compose.material.icons.filled.*
+    12→import androidx.compose.material3.*
+    13→import androidx.compose.runtime.*
+    14→import androidx.compose.ui.Alignment
+    15→import androidx.compose.ui.Modifier
+    16→import androidx.compose.ui.graphics.Color
+    17→import androidx.compose.ui.input.nestedscroll.nestedScroll
+    18→import androidx.compose.ui.text.font.FontWeight
+    19→import androidx.compose.ui.unit.dp
+    20→import androidx.compose.ui.unit.sp
+    21→import androidx.lifecycle.viewmodel.compose.viewModel
+    22→import com.apex.root.data.*
+    23→import com.apex.root.ui.compose.*
+    24→import com.apex.root.viewmodel.SettingsViewModel
+    25→import com.apex.root.viewmodel.trusted.ApexViewModel
+    26→
+    27→@OptIn(ExperimentalMaterial3Api::class)
+    28→@Composable
+    29→fun SettingsScreen(
+    30→    viewModel: SettingsViewModel = viewModel(),
+    31→    apexViewModel: ApexViewModel? = null,
+    32→    onNavigateToLogs: (() -> Unit)? = null,
+    33→    onNavigateToPermissions: (() -> Unit)? = null,
+    34→    onBack: (() -> Unit)? = null
+    35→) {
+    36→    val settings by viewModel.settings.collectAsState()
+    37→    var showResetDialog by remember { mutableStateOf(false) }
+    38→    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    39→    val snackbarHostState = remember { SnackbarHostState() }
+    40→    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    41→
+    42→    LaunchedEffect(Unit) {
+    43→        apexViewModel?.snackbarChannel?.collect { event ->
+    44→            snackbarHostState.currentSnackbarData?.dismiss()
+    45→            snackbarHostState.showSnackbar(event.message)
+    46→        }
+    47→    }
+    48→
+    49→    if (showResetDialog) {
+    50→        GlassModalBottomSheet(
+    51→            sheetState = sheetState,
+    52→            title = "重置所有设置",
+    53→            message = "这将恢复所有设置为默认值，此操作不可撤销。",
+    54→            confirmLabel = "确认重置",
+    55→            onDismiss = { showResetDialog = false },
+    56→            onConfirm = {
+    57→                viewModel.resetToDefaults()
+    58→                showResetDialog = false
+    59→                apexViewModel?.triggerReset()
+    60→            }
+    61→        )
+    62→    }
+    63→
+    64→    Scaffold(
+    65→        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+    66→        containerColor = Color.Transparent,
+    67→        snackbarHost = {
+    68→            SnackbarHost(hostState = snackbarHostState) { data ->
+    69→                GlassCustomSnackbar(message = data.visuals.message, type = SnackbarType.SUCCESS)
+    70→            }
+    71→        },
+    72→        topBar = {
+    73→            CollapsibleGlassTopBar(
+    74→                title = "设置",
+    75→                collapsedFraction = scrollBehavior.state.collapsedFraction,
+    76→                navigationIcon = {
+    77→                    Icon(Icons.Default.ArrowBack, "", modifier = Modifier.clickable { onBack?.invoke() })
+    78→                }
+    79→            )
+    80→        }
+    81→    ) { padding ->
+    82→        LiquidGlassContainer(fluidColorsDark = PageFluidColors.settings, fluidColorsLight = PageFluidColors.settingsLight) {
+    83→        Column(
+    84→            modifier = Modifier
+    85→                .fillMaxSize()
+    86→                .padding(padding)
+    87→                .verticalScroll(rememberScrollState()),
+    88→            verticalArrangement = Arrangement.spacedBy(0.dp)
+    89→        ) {
+    90→            Spacer(Modifier.height(8.dp))
+    91→
+    92→            DetectionSettingsGroup(settings, viewModel)
+    93→            Spacer(Modifier.height(24.dp))
+    94→
+    95→            GuardSettingsGroup(settings, viewModel)
+    96→            Spacer(Modifier.height(24.dp))
+    97→
+    98→            HideSpoofSettingsGroup(settings, viewModel)
+    99→            Spacer(Modifier.height(24.dp))
+   100→
+   101→            GameModeSettingsGroup(settings, viewModel)
+   102→            Spacer(Modifier.height(24.dp))
+   103→
+   104→            SandboxSettingsGroup(settings, viewModel)
+   105→            Spacer(Modifier.height(24.dp))
+   106→
+   107→            CureSettingsGroup(settings, viewModel)
+   108→            Spacer(Modifier.height(24.dp))
+   109→
+   110→            AppearanceSettingsGroup(settings, viewModel)
+   111→            Spacer(Modifier.height(24.dp))
+   112→
+   113→            NetworkFirewallGroup(settings, viewModel)
+   114→            Spacer(Modifier.height(24.dp))
+   115→
+   116→            NetworkSecurityGroup(settings, viewModel)
+   117→            Spacer(Modifier.height(24.dp))
+   118→
+   119→            NotificationsDetailGroup(settings, viewModel)
+   120→            Spacer(Modifier.height(24.dp))
+   121→
+   122→            UpdatesGroup(settings, viewModel)
+   123→            Spacer(Modifier.height(24.dp))
+   124→
+   125→            PrivacyGroup(settings, viewModel)
+   126→            Spacer(Modifier.height(24.dp))
+   127→
+   128→            PrivacyProtectionGroup(settings, viewModel)
+   129→            Spacer(Modifier.height(24.dp))
+   130→
+   131→            PerformanceGroup(settings, viewModel)
+   132→            Spacer(Modifier.height(24.dp))
+   133→
+   134→            LoggingGroup(settings, viewModel)
+   135→            Spacer(Modifier.height(24.dp))
+   136→
+   137→            SchedulingGroup(settings, viewModel)
+   138→            Spacer(Modifier.height(24.dp))
+   139→
+   140→            AdvancedGroup(settings, viewModel)
+   141→            Spacer(Modifier.height(24.dp))
+   142→
+   143→            PowerSettingsGroup(settings, viewModel)
+   144→            Spacer(Modifier.height(24.dp))
+   145→
+   146→            IpcSettingsGroup(settings, viewModel)
+   147→            Spacer(Modifier.height(24.dp))
+   148→
+   149→            WatchdogGroup(settings, viewModel)
+   150→            Spacer(Modifier.height(24.dp))
+   151→
+   152→            AntiDetectionGroup(settings, viewModel)
+   153→            Spacer(Modifier.height(24.dp))
+   154→
+   155→            WhitelistGroup(settings, viewModel)
+   156→            Spacer(Modifier.height(24.dp))
+   157→
+   158→            HardeningGroup(settings, viewModel)
+   159→            Spacer(Modifier.height(24.dp))
+   160→
+   161→            StealthGroup(settings, viewModel)
+   162→            Spacer(Modifier.height(24.dp))
+   163→
+   164→            EmergencyGroup(settings, viewModel)
+   165→            Spacer(Modifier.height(24.dp))
+   166→
+   167→            SideChannelGroup(settings, viewModel)
+   168→            Spacer(Modifier.height(24.dp))
+   169→
+   170→            SoundHapticGroup(settings, viewModel)
+   171→            Spacer(Modifier.height(24.dp))
+   172→
+   173→            AppLockGroup(settings, viewModel)
+   174→            Spacer(Modifier.height(24.dp))
+   175→
+   176→            ExportGroup(settings, viewModel)
+   177→            Spacer(Modifier.height(24.dp))
+   178→
+   179→            CryptoGroup(settings, viewModel)
+   180→            Spacer(Modifier.height(24.dp))
+   181→
+   182→            NetworkMonitorGroup(settings, viewModel)
+   183→            Spacer(Modifier.height(24.dp))
+   184→
+   185→            KernelGroup(settings, viewModel)
+   186→            Spacer(Modifier.height(24.dp))
+   187→
+   188→            QuickActionsGroup(settings, viewModel)
+   189→            Spacer(Modifier.height(24.dp))
+   190→
+   191→            BackupRestoreGroup(settings, viewModel)
+   192→            Spacer(Modifier.height(24.dp))
+   193→
+   194→            ConnectivityGroup(settings, viewModel)
+   195→            Spacer(Modifier.height(24.dp))
+   196→
+   197→            AutomationGroup(settings, viewModel)
+   198→            Spacer(Modifier.height(24.dp))
+   199→
+   200→            RemoteControlGroup(settings, viewModel)
+   201→            Spacer(Modifier.height(24.dp))
+   202→
+   203→            UserInterfaceGroup(settings, viewModel)
+   204→            Spacer(Modifier.height(24.dp))
+   205→
+   206→            StorageGroup(settings, viewModel)
+   207→            Spacer(Modifier.height(24.dp))
+   208→
+   209→            DeveloperGroup(settings, viewModel)
+   210→            Spacer(Modifier.height(24.dp))
+   211→
+   212→            FileMonitorGroup(settings, viewModel)
+   213→            Spacer(Modifier.height(24.dp))
+   214→
+   215→            ProcessGroup(settings, viewModel)
+   216→            Spacer(Modifier.height(24.dp))
+   217→
+   218→            BatteryOptimizationGroup(settings, viewModel)
+   219→            Spacer(Modifier.height(24.dp))
+   220→
+   221→            PermissionGroup(settings, viewModel)
+   222→            Spacer(Modifier.height(24.dp))
+   223→
+   224→            SensorGroup(settings, viewModel)
+   225→            Spacer(Modifier.height(24.dp))
+   226→
+   227→            AuditGroup(settings, viewModel)
+   228→            Spacer(Modifier.height(24.dp))
+   229→
+   230→            CommunityGroup(settings, viewModel)
+   231→            Spacer(Modifier.height(24.dp))
+   232→
+   233→            ExperimentalGroup(settings, viewModel)
+   234→            Spacer(Modifier.height(24.dp))
+   235→
+   236→            RootManagementGroup(settings, viewModel)
+   237→            Spacer(Modifier.height(24.dp))
+   238→
+   239→            SelinuxGroup(settings, viewModel)
+   240→            Spacer(Modifier.height(24.dp))
+   241→
+   242→            NamespaceGroup(settings, viewModel)
+   243→            Spacer(Modifier.height(24.dp))
+   244→
+   245→            ModuleGroup(settings, viewModel)
+   246→            Spacer(Modifier.height(24.dp))
+   247→
+   248→            ReportGroup(settings, viewModel)
+   249→            Spacer(Modifier.height(24.dp))
+   250→
+   251→            SecureInputGroup(settings, viewModel)
+   252→            Spacer(Modifier.height(24.dp))
+   253→
+   254→            WirelessGroup(settings, viewModel)
+   255→            Spacer(Modifier.height(24.dp))
+   256→
+   257→            EmergencyCommGroup(settings, viewModel)
+   258→            Spacer(Modifier.height(24.dp))
+   259→
+   260→            IntegrityGroup(settings, viewModel)
+   261→            Spacer(Modifier.height(24.dp))
+   262→
+   263→            VpnGroup(settings, viewModel)
+   264→            Spacer(Modifier.height(24.dp))
+   265→
+   266→            CertGroup(settings, viewModel)
+   267→            Spacer(Modifier.height(24.dp))
+   268→
+   269→            MagiskGroup(settings, viewModel)
+   270→            Spacer(Modifier.height(24.dp))
+   271→
+   272→            XposedGroup(settings, viewModel)
+   273→            Spacer(Modifier.height(24.dp))
+   274→
+   275→            ScriptGroup(settings, viewModel)
+   276→            Spacer(Modifier.height(24.dp))
+   277→
+   278→            HardwareGroup(settings, viewModel)
+   279→            Spacer(Modifier.height(24.dp))
+   280→
+   281→            SystemIntegrityGroup(settings, viewModel)
+   282→            Spacer(Modifier.height(24.dp))
+   283→
+   284→            AboutGroup(apexViewModel, onNavigateToLogs, onNavigateToPermissions)
+   285→            Spacer(Modifier.height(40.dp))
+   286→        }
+   287→    }
+   288→    }
+   289→}
+   290→
+   291→@Composable
+   292→private fun DetectionSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   293→    var expanded by remember { mutableStateOf(false) }
+   294→
+   295→    GlassSettingsGroup(title = "安全检测") {
+   296→        GlassSettingsItem(
+   297→            label = "检测级别",
+   298→            subtitle = settings.detectionLevel.label,
+   299→            icon = Icons.Default.Security,
+   300→            accentColor = AccentPurple,
+   301→            onClick = { expanded = !expanded }
+   302→        )
+   303→        if (expanded) {
+   304→            DetectionLevelSelector(settings.detectionLevel) { vm.updateDetectionLevel(it) }
+   305→        }
+   306→        GlassSettingsItem(
+   307→            label = "自动扫描",
+   308→            subtitle = when {
+   309→                !settings.autoScanEnabled -> "已关闭"
+   310→                else -> settings.autoScanInterval.label
+   311→            },
+   312→            icon = Icons.Default.Visibility,
+   313→            accentColor = AccentBlue,
+   314→            trailing = {
+   315→                Switch(
+   316→                    checked = settings.autoScanEnabled,
+   317→                    onCheckedChange = { vm.updateAutoScan(it) },
+   318→                    colors = SwitchDefaults.colors(
+   319→                        checkedThumbColor = AccentPurple,
+   320→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   321→                    )
+   322→                )
+   323→            }
+   324→        )
+   325→        if (settings.autoScanEnabled) {
+   326→            AutoScanIntervalSelector(settings.autoScanInterval) { vm.updateAutoScanInterval(it) }
+   327→        }
+   328→        GlassSettingsItem(
+   329→            label = "风险通知",
+   330→            subtitle = if (settings.riskNotificationEnabled) "已开启" else "已关闭",
+   331→            icon = Icons.Default.Notifications,
+   332→            accentColor = AccentGold,
+   333→            trailing = {
+   334→                Switch(
+   335→                    checked = settings.riskNotificationEnabled,
+   336→                    onCheckedChange = { vm.updateRiskNotification(it) },
+   337→                    colors = SwitchDefaults.colors(
+   338→                        checkedThumbColor = AccentPurple,
+   339→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   340→                    )
+   341→                )
+   342→            }
+   343→        )
+   344→        GlassSettingsItem(
+   345→            label = "风险阈值",
+   346→            subtitle = "${settings.riskThreshold} 分以上告警",
+   347→            icon = Icons.Default.Speed,
+   348→            accentColor = AccentGold
+   349→        )
+   350→        RiskThresholdSlider(settings.riskThreshold) { vm.updateRiskThreshold(it) }
+   351→        GlassSettingsItem(
+   352→            label = "检测插件",
+   353→            subtitle = "启用/禁用各层检测插件",
+   354→            icon = Icons.Default.Extension,
+   355→            accentColor = AccentPurple
+   356→        )
+   357→        PluginToggles(settings, vm)
+   358→    }
+   359→}
+   360→
+   361→@Composable
+   362→private fun DetectionLevelSelector(current: DetectionLevel, onSelect: (DetectionLevel) -> Unit) {
+   363→    // 优化：从 FilterChip 改为 Slider 滑动开关，符合用户要求
+   364→    // 4 个级别：QUICK(0) / STANDARD(1) / DEEP(2) / FORENSIC(3)
+   365→    // steps = 2 表示在 0..3 之间有 2 个内部停靠点（即 1 和 2），共 4 个位置
+   366→    Column(
+   367→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)
+   368→    ) {
+   369→        // 当前级别显示
+   370→        Row(
+   371→            modifier = Modifier.fillMaxWidth(),
+   372→            horizontalArrangement = Arrangement.SpaceBetween,
+   373→            verticalAlignment = Alignment.CenterVertically
+   374→        ) {
+   375→            Text(
+   376→                current.label,
+   377→                fontSize = 14.sp,
+   378→                fontWeight = FontWeight.SemiBold,
+   379→                color = AccentPurple
+   380→            )
+   381→            Text(
+   382→                "级别 ${current.value + 1} / ${DetectionLevel.entries.size}",
+   383→                fontSize = 11.sp,
+   384→                color = TextTertiary
+   385→            )
+   386→        }
+   387→        Spacer(Modifier.height(4.dp))
+   388→        // Slider 主体
+   389→        Row(
+   390→            modifier = Modifier.fillMaxWidth(),
+   391→            verticalAlignment = Alignment.CenterVertically
+   392→        ) {
+   393→            Text("快速", fontSize = 10.sp, color = TextTertiary)
+   394→            Slider(
+   395→                value = current.value.toFloat(),
+   396→                onValueChange = { value ->
+   397→                    val newIndex = value.toInt()
+   398→                    DetectionLevel.fromValue(newIndex)?.let { onSelect(it) }
+   399→                },
+   400→                valueRange = 0f..(DetectionLevel.entries.size - 1).toFloat(),
+   401→                steps = DetectionLevel.entries.size - 2,  // N 个停靠点需要 N-2 个 steps
+   402→                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+   403→                colors = SliderDefaults.colors(
+   404→                    thumbColor = AccentPurple,
+   405→                    activeTrackColor = AccentPurple,
+   406→                    inactiveTrackColor = AccentPurple.copy(alpha = 0.15f)
+   407→                )
+   408→            )
+   409→            Text("取证", fontSize = 10.sp, color = TextTertiary)
+   410→        }
+   411→        // 级别标签
+   412→        Row(
+   413→            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+   414→            horizontalArrangement = Arrangement.SpaceBetween
+   415→        ) {
+   416→            DetectionLevel.entries.forEach { level ->
+   417→                Text(
+   418→                    level.name.first().toString(),
+   419→                    fontSize = 9.sp,
+   420→                    color = if (level == current) AccentPurple else TextTertiary
+   421→                )
+   422→            }
+   423→        }
+   424→    }
+   425→}
+   426→
+   427→@Composable
+   428→private fun AutoScanIntervalSelector(current: AutoScanInterval, onSelect: (AutoScanInterval) -> Unit) {
+   429→    Row(
+   430→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   431→        horizontalArrangement = Arrangement.spacedBy(6.dp)
+   432→    ) {
+   433→        AutoScanInterval.entries.forEach { interval ->
+   434→            FilterChip(
+   435→                selected = interval == current,
+   436→                onClick = { onSelect(interval) },
+   437→                label = { Text(interval.label, fontSize = 9.sp) },
+   438→                colors = FilterChipDefaults.filterChipColors(
+   439→                    selectedContainerColor = AccentBlue.copy(alpha = 0.2f),
+   440→                    selectedLabelColor = AccentBlue
+   441→                ),
+   442→                shape = RoundedCornerShape(10.dp)
+   443→            )
+   444→        }
+   445→    }
+   446→}
+   447→
+   448→@Composable
+   449→private fun RiskThresholdSlider(threshold: Int, onChange: (Int) -> Unit) {
+   450→    Row(
+   451→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   452→        verticalAlignment = Alignment.CenterVertically
+   453→    ) {
+   454→        Text("低", fontSize = 10.sp, color = TextTertiary)
+   455→        Slider(
+   456→            value = threshold.toFloat(),
+   457→            onValueChange = { onChange(it.toInt()) },
+   458→            valueRange = 0f..100f,
+   459→            steps = 19,
+   460→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+   461→            colors = SliderDefaults.colors(
+   462→                thumbColor = AccentGold,
+   463→                activeTrackColor = AccentGold,
+   464→                inactiveTrackColor = AccentGold.copy(alpha = 0.15f)
+   465→            )
+   466→        )
+   467→        Text("高", fontSize = 10.sp, color = TextTertiary)
+   468→    }
+   469→}
+   470→
+   471→@Composable
+   472→private fun PluginToggles(settings: AppSettings, vm: SettingsViewModel) {
+   473→    val plugins = listOf(
+   474→        1 to "L1 属性裸读", 2 to "L2 ART 注入", 3 to "L3 进程/内存",
+   475→        4 to "L4 挂载对比", 5 to "L5 侧信道", 6 to "L6 内核探针",
+   476→        7 to "L7 TEE 旁路"
+   477→    )
+   478→    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+   479→        plugins.forEach { (index, name) ->
+   480→            val enabled = when (index) {
+   481→                1 -> settings.pluginL1Enabled; 2 -> settings.pluginL2Enabled
+   482→                3 -> settings.pluginL3Enabled; 4 -> settings.pluginL4Enabled
+   483→                5 -> settings.pluginL5Enabled; 6 -> settings.pluginL6Enabled
+   484→                7 -> settings.pluginL7Enabled; else -> true
+   485→            }
+   486→            Row(
+   487→                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+   488→                verticalAlignment = Alignment.CenterVertically
+   489→            ) {
+   490→                Text(name, fontSize = 12.sp, color = TextSecondary, modifier = Modifier.weight(1f))
+   491→                Switch(
+   492→                    checked = enabled,
+   493→                    onCheckedChange = { vm.updatePluginEnabled(index, it) },
+   494→                    colors = SwitchDefaults.colors(
+   495→                        checkedThumbColor = AccentPurple,
+   496→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f),
+   497→                        uncheckedThumbColor = TextTertiary,
+   498→                        uncheckedTrackColor = TextTertiary.copy(alpha = 0.15f)
+   499→                    )
+   500→                )
+   501→            }
+   502→        }
+   503→    }
+   504→}
+   505→
+   506→@Composable
+   507→private fun GuardSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   508→    var expanded by remember { mutableStateOf(false) }
+   509→
+   510→    GlassSettingsGroup(title = "防护设置") {
+   511→        GlassSettingsItem(
+   512→            label = "APEX-Guard",
+   513→            subtitle = if (settings.guardEnabled) "已启用" else "已禁用",
+   514→            icon = Icons.Default.Shield,
+   515→            accentColor = AccentMint,
+   516→            trailing = {
+   517→                Switch(
+   518→                    checked = settings.guardEnabled,
+   519→                    onCheckedChange = { vm.updateGuardEnabled(it) },
+   520→                    colors = SwitchDefaults.colors(
+   521→                        checkedThumbColor = AccentPurple,
+   522→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   523→                    )
+   524→                )
+   525→            },
+   526→            onClick = { expanded = !expanded }
+   527→        )
+   528→        if (expanded && settings.guardEnabled) {
+   529→            GuardLevelSelector(settings.guardLevel) { vm.updateGuardLevel(it) }
+   530→            SelfCheckIntervalSlider(settings.guardSelfCheckInterval) { vm.updateGuardSelfCheckInterval(it) }
+   531→            GlassSettingsItem(
+   532→                label = "反调试保护",
+   533→                subtitle = if (settings.guardAntiDebug) "已开启" else "已关闭",
+   534→                icon = Icons.Default.RemoveRedEye,
+   535→                accentColor = ErrorRed,
+   536→                trailing = {
+   537→                    Switch(
+   538→                        checked = settings.guardAntiDebug,
+   539→                        onCheckedChange = { vm.updateGuardAntiDebug(it) },
+   540→                        colors = SwitchDefaults.colors(
+   541→                            checkedThumbColor = AccentPurple,
+   542→                            checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   543→                        )
+   544→                    )
+   545→                }
+   546→            )
+   547→            GlassSettingsItem(
+   548→                label = "自动恢复",
+   549→                subtitle = if (settings.guardAutoRecovery) "检测到篡改自动恢复" else "仅告警",
+   550→                icon = Icons.Default.Restore,
+   551→                accentColor = AccentGold,
+   552→                trailing = {
+   553→                    Switch(
+   554→                        checked = settings.guardAutoRecovery,
+   555→                        onCheckedChange = { vm.updateGuardAutoRecovery(it) },
+   556→                        colors = SwitchDefaults.colors(
+   557→                            checkedThumbColor = AccentPurple,
+   558→                            checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   559→                        )
+   560→                    )
+   561→                }
+   562→            )
+   563→        }
+   564→    }
+   565→}
+   566→
+   567→@Composable
+   568→private fun GuardLevelSelector(current: GuardLevel, onSelect: (GuardLevel) -> Unit) {
+   569→    Row(
+   570→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   571→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+   572→    ) {
+   573→        GuardLevel.entries.forEach { level ->
+   574→            FilterChip(
+   575→                selected = level == current,
+   576→                onClick = { onSelect(level) },
+   577→                label = { Text(level.label, fontSize = 10.sp) },
+   578→                colors = FilterChipDefaults.filterChipColors(
+   579→                    selectedContainerColor = AccentMint.copy(alpha = 0.2f),
+   580→                    selectedLabelColor = AccentMint
+   581→                ),
+   582→                shape = RoundedCornerShape(10.dp)
+   583→            )
+   584→        }
+   585→    }
+   586→}
+   587→
+   588→@Composable
+   589→private fun SelfCheckIntervalSlider(seconds: Int, onChange: (Int) -> Unit) {
+   590→    Row(
+   591→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   592→        verticalAlignment = Alignment.CenterVertically
+   593→    ) {
+   594→        Text("1s", fontSize = 10.sp, color = TextTertiary)
+   595→        Slider(
+   596→            value = seconds.toFloat(),
+   597→            onValueChange = { onChange(it.toInt()) },
+   598→            valueRange = 1f..30f,
+   599→            steps = 28,
+   600→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+   601→            colors = SliderDefaults.colors(
+   602→                thumbColor = AccentMint,
+   603→                activeTrackColor = AccentMint,
+   604→                inactiveTrackColor = AccentMint.copy(alpha = 0.15f)
+   605→            )
+   606→        )
+   607→        Text("30s", fontSize = 10.sp, color = TextTertiary)
+   608→    }
+   609→}
+   610→
+   611→@Composable
+   612→private fun HideSpoofSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   613→    GlassSettingsGroup(title = "隐藏 & 伪装") {
+   614→        GlassSettingsItem(
+   615→            label = "隐藏策略",
+   616→            subtitle = settings.hideStrategy.label,
+   617→            icon = Icons.Default.VisibilityOff,
+   618→            accentColor = AccentPurple
+   619→        )
+   620→        HideStrategySelector(settings.hideStrategy) { vm.updateHideStrategy(it) }
+   621→        GlassSettingsItem(
+   622→            label = "HWID 伪装",
+   623→            subtitle = if (settings.hwidSpoofEnabled) "已开启" else "已关闭",
+   624→            icon = Icons.Default.Fingerprint,
+   625→            accentColor = AccentGold,
+   626→            trailing = {
+   627→                Switch(
+   628→                    checked = settings.hwidSpoofEnabled,
+   629→                    onCheckedChange = { vm.updateHwidSpoof(it) },
+   630→                    colors = SwitchDefaults.colors(
+   631→                        checkedThumbColor = AccentPurple,
+   632→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   633→                    )
+   634→                )
+   635→            }
+   636→        )
+   637→        GlassSettingsItem(
+   638→            label = "Bootloader 伪装",
+   639→            subtitle = if (settings.bootloaderSpoofEnabled) "已开启" else "已关闭",
+   640→            icon = Icons.Default.Lock,
+   641→            accentColor = AccentGold,
+   642→            trailing = {
+   643→                Switch(
+   644→                    checked = settings.bootloaderSpoofEnabled,
+   645→                    onCheckedChange = { vm.updateBootloaderSpoof(it) },
+   646→                    colors = SwitchDefaults.colors(
+   647→                        checkedThumbColor = AccentPurple,
+   648→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   649→                    )
+   650→                )
+   651→            }
+   652→        )
+   653→    }
+   654→}
+   655→
+   656→@Composable
+   657→private fun HideStrategySelector(current: HideStrategy, onSelect: (HideStrategy) -> Unit) {
+   658→    Row(
+   659→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   660→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+   661→    ) {
+   662→        HideStrategy.entries.forEach { strategy ->
+   663→            FilterChip(
+   664→                selected = strategy == current,
+   665→                onClick = { onSelect(strategy) },
+   666→                label = { Text(strategy.label, fontSize = 10.sp) },
+   667→                colors = FilterChipDefaults.filterChipColors(
+   668→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+   669→                    selectedLabelColor = AccentPurple
+   670→                ),
+   671→                shape = RoundedCornerShape(10.dp)
+   672→            )
+   673→        }
+   674→    }
+   675→}
+   676→
+   677→@Composable
+   678→private fun GameModeSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   679→    GlassSettingsGroup(title = "游戏模式") {
+   680→        GlassSettingsItem(
+   681→            label = "游戏模式",
+   682→            subtitle = if (settings.gameModeEnabled) "已开启" else "已关闭",
+   683→            icon = Icons.Default.VideogameAsset,
+   684→            accentColor = AccentGold,
+   685→            trailing = {
+   686→                Switch(
+   687→                    checked = settings.gameModeEnabled,
+   688→                    onCheckedChange = { vm.updateGameMode(it) },
+   689→                    colors = SwitchDefaults.colors(
+   690→                        checkedThumbColor = AccentPurple,
+   691→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   692→                    )
+   693→                )
+   694→            }
+   695→        )
+   696→        GlassSettingsItem(
+   697→            label = "激进模式",
+   698→            subtitle = if (settings.gameModeAggressive) "隐藏所有 Root 痕迹" else "仅隐藏关键痕迹",
+   699→            icon = Icons.Default.Bolt,
+   700→            accentColor = ErrorRed,
+   701→            trailing = {
+   702→                Switch(
+   703→                    checked = settings.gameModeAggressive,
+   704→                    onCheckedChange = { vm.updateGameModeAggressive(it) },
+   705→                    colors = SwitchDefaults.colors(
+   706→                        checkedThumbColor = AccentPurple,
+   707→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   708→                    )
+   709→                )
+   710→            }
+   711→        )
+   712→    }
+   713→}
+   714→
+   715→@Composable
+   716→private fun SandboxSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   717→    GlassSettingsGroup(title = "隔离环境") {
+   718→        GlassSettingsItem(
+   719→            label = "启动时自动创建",
+   720→            subtitle = if (settings.sandboxAutoCreate) "应用启动自动创建隔离环境" else "手动创建",
+   721→            icon = Icons.Default.AutoMode,
+   722→            accentColor = AccentBlue,
+   723→            trailing = {
+   724→                Switch(
+   725→                    checked = settings.sandboxAutoCreate,
+   726→                    onCheckedChange = { vm.updateSandboxAutoCreate(it) },
+   727→                    colors = SwitchDefaults.colors(
+   728→                        checkedThumbColor = AccentPurple,
+   729→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   730→                    )
+   731→                )
+   732→            }
+   733→        )
+   734→        GlassSettingsItem(
+   735→            label = "退出时清理",
+   736→            subtitle = if (settings.sandboxCleanupOnExit) "自动销毁隔离环境" else "保留隔离环境",
+   737→            icon = Icons.Default.CleaningServices,
+   738→            accentColor = AccentBlue,
+   739→            trailing = {
+   740→                Switch(
+   741→                    checked = settings.sandboxCleanupOnExit,
+   742→                    onCheckedChange = { vm.updateSandboxCleanupOnExit(it) },
+   743→                    colors = SwitchDefaults.colors(
+   744→                        checkedThumbColor = AccentPurple,
+   745→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   746→                    )
+   747→                )
+   748→            }
+   749→        )
+   750→    }
+   751→}
+   752→
+   753→@Composable
+   754→private fun CureSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   755→    val cureLabels = listOf("轻度清理", "标准修复", "深度恢复", "完全重置")
+   756→    var expanded by remember { mutableStateOf(false) }
+   757→
+   758→    GlassSettingsGroup(title = "修复引擎") {
+   759→        GlassSettingsItem(
+   760→            label = "默认修复级别",
+   761→            subtitle = cureLabels.getOrElse(settings.cureDefaultLevel) { "标准修复" },
+   762→            icon = Icons.Default.Medication,
+   763→            accentColor = AccentMint,
+   764→            onClick = { expanded = !expanded }
+   765→        )
+   766→        if (expanded) {
+   767→            Row(
+   768→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   769→                horizontalArrangement = Arrangement.spacedBy(6.dp)
+   770→            ) {
+   771→                cureLabels.forEachIndexed { index, label ->
+   772→                    FilterChip(
+   773→                        selected = index == settings.cureDefaultLevel,
+   774→                        onClick = { vm.updateCureDefaultLevel(index) },
+   775→                        label = { Text(label, fontSize = 9.sp) },
+   776→                        colors = FilterChipDefaults.filterChipColors(
+   777→                            selectedContainerColor = AccentMint.copy(alpha = 0.2f),
+   778→                            selectedLabelColor = AccentMint
+   779→                        ),
+   780→                        shape = RoundedCornerShape(10.dp)
+   781→                    )
+   782→                }
+   783→            }
+   784→        }
+   785→        GlassSettingsItem(
+   786→            label = "自动修复",
+   787→            subtitle = if (settings.cureAutoFix) "检测到 Root 自动修复" else "手动触发修复",
+   788→            icon = Icons.Default.Autorenew,
+   789→            accentColor = AccentMint,
+   790→            trailing = {
+   791→                Switch(
+   792→                    checked = settings.cureAutoFix,
+   793→                    onCheckedChange = { vm.updateCureAutoFix(it) },
+   794→                    colors = SwitchDefaults.colors(
+   795→                        checkedThumbColor = AccentPurple,
+   796→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   797→                    )
+   798→                )
+   799→            }
+   800→        )
+   801→    }
+   802→}
+   803→
+   804→@Composable
+   805→private fun AppearanceSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+   806→    GlassSettingsGroup(title = "外观") {
+   807→        GlassSettingsItem(
+   808→            label = "主题模式",
+   809→            subtitle = settings.themeMode.label,
+   810→            icon = Icons.Default.DarkMode,
+   811→            accentColor = AccentPurple
+   812→        )
+   813→        ThemeModeSelector(settings.themeMode) { vm.updateThemeMode(it) }
+   814→        GlassSettingsItem(
+   815→            label = "强调色",
+   816→            subtitle = settings.accentColor.label,
+   817→            icon = Icons.Default.Palette,
+   818→            accentColor = parseColor(settings.accentColor.hex)
+   819→        )
+   820→        AccentColorSelector(settings.accentColor) { vm.updateAccentColor(it) }
+   821→        GlassSettingsItem(
+   822→            label = "过渡动画",
+   823→            subtitle = if (settings.animationsEnabled) "已开启" else "已关闭",
+   824→            icon = Icons.Default.Animation,
+   825→            accentColor = AccentBlue,
+   826→            trailing = {
+   827→                Switch(
+   828→                    checked = settings.animationsEnabled,
+   829→                    onCheckedChange = { vm.updateAnimations(it) },
+   830→                    colors = SwitchDefaults.colors(
+   831→                        checkedThumbColor = AccentPurple,
+   832→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   833→                    )
+   834→                )
+   835→            }
+   836→        )
+   837→        GlassSettingsItem(
+   838→            label = "液态玻璃效果",
+   839→            subtitle = if (settings.liquidGlassEffect) "已开启" else "已关闭",
+   840→            icon = Icons.Default.BlurOn,
+   841→            accentColor = AccentBlue,
+   842→            trailing = {
+   843→                Switch(
+   844→                    checked = settings.liquidGlassEffect,
+   845→                    onCheckedChange = { vm.updateLiquidGlassEffect(it) },
+   846→                    colors = SwitchDefaults.colors(
+   847→                        checkedThumbColor = AccentPurple,
+   848→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   849→                    )
+   850→                )
+   851→            }
+   852→        )
+   853→    }
+   854→}
+   855→
+   856→@Composable
+   857→private fun ThemeModeSelector(current: ThemeMode, onSelect: (ThemeMode) -> Unit) {
+   858→    Row(
+   859→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   860→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+   861→    ) {
+   862→        ThemeMode.entries.forEach { mode ->
+   863→            FilterChip(
+   864→                selected = mode == current,
+   865→                onClick = { onSelect(mode) },
+   866→                label = { Text(mode.label, fontSize = 10.sp) },
+   867→                colors = FilterChipDefaults.filterChipColors(
+   868→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+   869→                    selectedLabelColor = AccentPurple
+   870→                ),
+   871→                shape = RoundedCornerShape(10.dp)
+   872→            )
+   873→        }
+   874→    }
+   875→}
+   876→
+   877→@Composable
+   878→private fun AccentColorSelector(current: AccentColor, onSelect: (AccentColor) -> Unit) {
+   879→    Row(
+   880→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   881→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+   882→    ) {
+   883→        AccentColor.entries.forEach { color ->
+   884→            FilterChip(
+   885→                selected = color == current,
+   886→                onClick = { onSelect(color) },
+   887→                label = { Text(color.label, fontSize = 9.sp) },
+   888→                colors = FilterChipDefaults.filterChipColors(
+   889→                    selectedContainerColor = parseColor(color.hex).copy(alpha = 0.2f),
+   890→                    selectedLabelColor = parseColor(color.hex)
+   891→                ),
+   892→                shape = RoundedCornerShape(10.dp)
+   893→            )
+   894→        }
+   895→    }
+   896→}
+   897→
+   898→@Composable
+   899→private fun NetworkFirewallGroup(settings: AppSettings, vm: SettingsViewModel) {
+   900→    var proxyExpanded by remember { mutableStateOf(false) }
+   901→    var proxyText by remember(settings.updateProxy) { mutableStateOf(settings.updateProxy) }
+   902→
+   903→    GlassSettingsGroup(title = "网络 & 防火墙") {
+   904→        GlassSettingsItem(
+   905→            label = "eBPF 防火墙",
+   906→            subtitle = if (settings.ebpfFirewallEnabled) "已启用" else "已禁用",
+   907→            icon = Icons.Default.Fireplace,
+   908→            accentColor = ErrorRed,
+   909→            trailing = {
+   910→                Switch(
+   911→                    checked = settings.ebpfFirewallEnabled,
+   912→                    onCheckedChange = { vm.updateEbpfFirewall(it) },
+   913→                    colors = SwitchDefaults.colors(
+   914→                        checkedThumbColor = AccentPurple,
+   915→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   916→                    )
+   917→                )
+   918→            }
+   919→        )
+   920→        GlassSettingsItem(
+   921→            label = "防火墙日志",
+   922→            subtitle = if (settings.firewallLogging) "已开启" else "已关闭",
+   923→            icon = Icons.Default.Assessment,
+   924→            accentColor = AccentGold,
+   925→            trailing = {
+   926→                Switch(
+   927→                    checked = settings.firewallLogging,
+   928→                    onCheckedChange = { vm.updateFirewallLogging(it) },
+   929→                    colors = SwitchDefaults.colors(
+   930→                        checkedThumbColor = AccentPurple,
+   931→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   932→                    )
+   933→                )
+   934→            }
+   935→        )
+   936→        GlassSettingsItem(
+   937→            label = "更新代理",
+   938→            subtitle = if (settings.updateProxy.isBlank()) "未设置" else settings.updateProxy,
+   939→            icon = Icons.Default.VpnKey,
+   940→            accentColor = AccentBlue,
+   941→            onClick = { proxyExpanded = !proxyExpanded }
+   942→        )
+   943→        if (proxyExpanded) {
+   944→            Row(
+   945→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+   946→                verticalAlignment = Alignment.CenterVertically
+   947→            ) {
+   948→                OutlinedTextField(
+   949→                    value = proxyText,
+   950→                    onValueChange = { proxyText = it },
+   951→                    placeholder = { Text("http://proxy:port", fontSize = 12.sp) },
+   952→                    modifier = Modifier.weight(1f),
+   953→                    singleLine = true,
+   954→                    textStyle = MaterialTheme.typography.bodySmall,
+   955→                    colors = OutlinedTextFieldDefaults.colors(
+   956→                        focusedBorderColor = AccentBlue,
+   957→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+   958→                    ),
+   959→                    shape = RoundedCornerShape(10.dp)
+   960→                )
+   961→                Spacer(Modifier.width(8.dp))
+   962→                Button(
+   963→                    onClick = { vm.updateUpdateProxy(proxyText) },
+   964→                    shape = RoundedCornerShape(10.dp),
+   965→                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+   966→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+   967→                ) { Text("保存", fontSize = 11.sp) }
+   968→            }
+   969→        }
+   970→    }
+   971→}
+   972→
+   973→@Composable
+   974→private fun NotificationsDetailGroup(settings: AppSettings, vm: SettingsViewModel) {
+   975→    GlassSettingsGroup(title = "通知类型") {
+   976→        GlassSettingsItem(
+   977→            label = "检测完成通知",
+   978→            subtitle = if (settings.notifyScanComplete) "已开启" else "已关闭",
+   979→            icon = Icons.Default.TaskAlt,
+   980→            accentColor = AccentMint,
+   981→            trailing = {
+   982→                Switch(
+   983→                    checked = settings.notifyScanComplete,
+   984→                    onCheckedChange = { vm.updateNotifyScanComplete(it) },
+   985→                    colors = SwitchDefaults.colors(
+   986→                        checkedThumbColor = AccentPurple,
+   987→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+   988→                    )
+   989→                )
+   990→            }
+   991→        )
+   992→        GlassSettingsItem(
+   993→            label = "风险告警通知",
+   994→            subtitle = if (settings.notifyRiskFound) "已开启" else "已关闭",
+   995→            icon = Icons.Default.Warning,
+   996→            accentColor = ErrorRed,
+   997→            trailing = {
+   998→                Switch(
+   999→                    checked = settings.notifyRiskFound,
+  1000→                    onCheckedChange = { vm.updateNotifyRiskFound(it) },
+  1001→                    colors = SwitchDefaults.colors(
+  1002→                        checkedThumbColor = AccentPurple,
+  1003→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1004→                    )
+  1005→                )
+  1006→            }
+  1007→        )
+  1008→        GlassSettingsItem(
+  1009→            label = "防护告警通知",
+  1010→            subtitle = if (settings.notifyGuardAlert) "已开启" else "已关闭",
+  1011→            icon = Icons.Default.Security,
+  1012→            accentColor = AccentGold,
+  1013→            trailing = {
+  1014→                Switch(
+  1015→                    checked = settings.notifyGuardAlert,
+  1016→                    onCheckedChange = { vm.updateNotifyGuardAlert(it) },
+  1017→                    colors = SwitchDefaults.colors(
+  1018→                        checkedThumbColor = AccentPurple,
+  1019→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1020→                    )
+  1021→                )
+  1022→            }
+  1023→        )
+  1024→        GlassSettingsItem(
+  1025→            label = "修复结果通知",
+  1026→            subtitle = if (settings.notifyCureResult) "已开启" else "已关闭",
+  1027→            icon = Icons.Default.Medication,
+  1028→            accentColor = AccentMint,
+  1029→            trailing = {
+  1030→                Switch(
+  1031→                    checked = settings.notifyCureResult,
+  1032→                    onCheckedChange = { vm.updateNotifyCureResult(it) },
+  1033→                    colors = SwitchDefaults.colors(
+  1034→                        checkedThumbColor = AccentPurple,
+  1035→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1036→                    )
+  1037→                )
+  1038→            }
+  1039→        )
+  1040→        GlassSettingsItem(
+  1041→            label = "更新提示通知",
+  1042→            subtitle = if (settings.notifyUpdateAvailable) "已开启" else "已关闭",
+  1043→            icon = Icons.Default.SystemUpdate,
+  1044→            accentColor = AccentBlue,
+  1045→            trailing = {
+  1046→                Switch(
+  1047→                    checked = settings.notifyUpdateAvailable,
+  1048→                    onCheckedChange = { vm.updateNotifyUpdateAvailable(it) },
+  1049→                    colors = SwitchDefaults.colors(
+  1050→                        checkedThumbColor = AccentPurple,
+  1051→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1052→                    )
+  1053→                )
+  1054→            }
+  1055→        )
+  1056→    }
+  1057→}
+  1058→
+  1059→@Composable
+  1060→private fun UpdatesGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1061→    GlassSettingsGroup(title = "更新") {
+  1062→        GlassSettingsItem(
+  1063→            label = "自动检查更新",
+  1064→            subtitle = if (settings.autoCheckUpdates) "已开启" else "已关闭",
+  1065→            icon = Icons.Default.Update,
+  1066→            accentColor = AccentBlue,
+  1067→            trailing = {
+  1068→                Switch(
+  1069→                    checked = settings.autoCheckUpdates,
+  1070→                    onCheckedChange = { vm.updateAutoCheckUpdates(it) },
+  1071→                    colors = SwitchDefaults.colors(
+  1072→                        checkedThumbColor = AccentPurple,
+  1073→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1074→                    )
+  1075→                )
+  1076→            }
+  1077→        )
+  1078→        GlassSettingsItem(
+  1079→            label = "更新通道",
+  1080→            subtitle = settings.updateChannel.label,
+  1081→            icon = Icons.Default.Rocket,
+  1082→            accentColor = AccentPurple
+  1083→        )
+  1084→        UpdateChannelSelector(settings.updateChannel) { vm.updateUpdateChannel(it) }
+  1085→        GlassSettingsItem(
+  1086→            label = "仅 WiFi 更新",
+  1087→            subtitle = if (settings.wifiOnlyUpdate) "仅在 WiFi 下检查更新" else "移动网络也可更新",
+  1088→            icon = Icons.Default.Wifi,
+  1089→            accentColor = AccentBlue,
+  1090→            trailing = {
+  1091→                Switch(
+  1092→                    checked = settings.wifiOnlyUpdate,
+  1093→                    onCheckedChange = { vm.updateWifiOnlyUpdate(it) },
+  1094→                    colors = SwitchDefaults.colors(
+  1095→                        checkedThumbColor = AccentPurple,
+  1096→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1097→                    )
+  1098→                )
+  1099→            }
+  1100→        )
+  1101→    }
+  1102→}
+  1103→
+  1104→@Composable
+  1105→private fun UpdateChannelSelector(current: UpdateChannel, onSelect: (UpdateChannel) -> Unit) {
+  1106→    Row(
+  1107→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1108→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+  1109→    ) {
+  1110→        UpdateChannel.entries.forEach { channel ->
+  1111→            FilterChip(
+  1112→                selected = channel == current,
+  1113→                onClick = { onSelect(channel) },
+  1114→                label = { Text(channel.label, fontSize = 10.sp) },
+  1115→                colors = FilterChipDefaults.filterChipColors(
+  1116→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+  1117→                    selectedLabelColor = AccentPurple
+  1118→                ),
+  1119→                shape = RoundedCornerShape(10.dp)
+  1120→            )
+  1121→        }
+  1122→    }
+  1123→}
+  1124→
+  1125→@Composable
+  1126→private fun PrivacyGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1127→    GlassSettingsGroup(title = "隐私 & 数据") {
+  1128→        GlassSettingsItem(
+  1129→            label = "匿名使用统计",
+  1130→            subtitle = if (settings.telemetryEnabled) "帮助改进产品" else "已关闭",
+  1131→            icon = Icons.Default.Analytics,
+  1132→            accentColor = AccentPurple,
+  1133→            trailing = {
+  1134→                Switch(
+  1135→                    checked = settings.telemetryEnabled,
+  1136→                    onCheckedChange = { vm.updateTelemetry(it) },
+  1137→                    colors = SwitchDefaults.colors(
+  1138→                        checkedThumbColor = AccentPurple,
+  1139→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1140→                    )
+  1141→                )
+  1142→            }
+  1143→        )
+  1144→        GlassSettingsItem(
+  1145→            label = "崩溃报告",
+  1146→            subtitle = if (settings.crashReportsEnabled) "自动发送崩溃报告" else "已关闭",
+  1147→            icon = Icons.Default.BugReport,
+  1148→            accentColor = ErrorRed,
+  1149→            trailing = {
+  1150→                Switch(
+  1151→                    checked = settings.crashReportsEnabled,
+  1152→                    onCheckedChange = { vm.updateCrashReports(it) },
+  1153→                    colors = SwitchDefaults.colors(
+  1154→                        checkedThumbColor = AccentPurple,
+  1155→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1156→                    )
+  1157→                )
+  1158→            }
+  1159→        )
+  1160→    }
+  1161→}
+  1162→
+  1163→@Composable
+  1164→private fun PerformanceGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1165→    GlassSettingsGroup(title = "性能") {
+  1166→        GlassSettingsItem(
+  1167→            label = "扫描并发数",
+  1168→            subtitle = "${settings.scanConcurrency} 个并发任务",
+  1169→            icon = Icons.Default.Speed,
+  1170→            accentColor = AccentGold
+  1171→        )
+  1172→        ConcurrencySlider(settings.scanConcurrency) { vm.updateScanConcurrency(it) }
+  1173→        GlassSettingsItem(
+  1174→            label = "缓存有效期",
+  1175→            subtitle = "${settings.cacheMaxAgeMinutes} 分钟",
+  1176→            icon = Icons.Default.Cached,
+  1177→            accentColor = AccentBlue
+  1178→        )
+  1179→        CacheAgeSlider(settings.cacheMaxAgeMinutes) { vm.updateCacheMaxAge(it) }
+  1180→        GlassSettingsItem(
+  1181→            label = "低内存模式",
+  1182→            subtitle = if (settings.lowMemoryMode) "减少内存占用" else "标准模式",
+  1183→            icon = Icons.Default.Memory,
+  1184→            accentColor = AccentMint,
+  1185→            trailing = {
+  1186→                Switch(
+  1187→                    checked = settings.lowMemoryMode,
+  1188→                    onCheckedChange = { vm.updateLowMemoryMode(it) },
+  1189→                    colors = SwitchDefaults.colors(
+  1190→                        checkedThumbColor = AccentPurple,
+  1191→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1192→                    )
+  1193→                )
+  1194→            }
+  1195→        )
+  1196→    }
+  1197→}
+  1198→
+  1199→@Composable
+  1200→private fun ConcurrencySlider(count: Int, onChange: (Int) -> Unit) {
+  1201→    Row(
+  1202→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1203→        verticalAlignment = Alignment.CenterVertically
+  1204→    ) {
+  1205→        Text("1", fontSize = 10.sp, color = TextTertiary)
+  1206→        Slider(
+  1207→            value = count.toFloat(),
+  1208→            onValueChange = { onChange(it.toInt()) },
+  1209→            valueRange = 1f..8f,
+  1210→            steps = 6,
+  1211→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+  1212→            colors = SliderDefaults.colors(
+  1213→                thumbColor = AccentGold,
+  1214→                activeTrackColor = AccentGold,
+  1215→                inactiveTrackColor = AccentGold.copy(alpha = 0.15f)
+  1216→            )
+  1217→        )
+  1218→        Text("8", fontSize = 10.sp, color = TextTertiary)
+  1219→    }
+  1220→}
+  1221→
+  1222→@Composable
+  1223→private fun CacheAgeSlider(minutes: Int, onChange: (Int) -> Unit) {
+  1224→    Row(
+  1225→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1226→        verticalAlignment = Alignment.CenterVertically
+  1227→    ) {
+  1228→        Text("1m", fontSize = 10.sp, color = TextTertiary)
+  1229→        Slider(
+  1230→            value = minutes.toFloat(),
+  1231→            onValueChange = { onChange(it.toInt()) },
+  1232→            valueRange = 1f..180f,
+  1233→            steps = 17,
+  1234→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+  1235→            colors = SliderDefaults.colors(
+  1236→                thumbColor = AccentBlue,
+  1237→                activeTrackColor = AccentBlue,
+  1238→                inactiveTrackColor = AccentBlue.copy(alpha = 0.15f)
+  1239→            )
+  1240→        )
+  1241→        Text("180m", fontSize = 10.sp, color = TextTertiary)
+  1242→    }
+  1243→}
+  1244→
+  1245→@Composable
+  1246→private fun LoggingGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1247→    GlassSettingsGroup(title = "日志") {
+  1248→        GlassSettingsItem(
+  1249→            label = "日志级别",
+  1250→            subtitle = settings.logLevel.label,
+  1251→            icon = Icons.Default.Article,
+  1252→            accentColor = AccentPurple
+  1253→        )
+  1254→        LogLevelSelector(settings.logLevel) { vm.updateLogLevel(it) }
+  1255→        GlassSettingsItem(
+  1256→            label = "最大日志文件数",
+  1257→            subtitle = "${settings.logMaxFiles} 个文件",
+  1258→            icon = Icons.Default.Folder,
+  1259→            accentColor = AccentGold
+  1260→        )
+  1261→        LogFilesSlider(settings.logMaxFiles) { vm.updateLogMaxFiles(it) }
+  1262→        GlassSettingsItem(
+  1263→            label = "自动清理日志",
+  1264→            subtitle = if (settings.logAutoCleanup) "自动删除过期日志" else "手动清理",
+  1265→            icon = Icons.Default.CleaningServices,
+  1266→            accentColor = AccentMint,
+  1267→            trailing = {
+  1268→                Switch(
+  1269→                    checked = settings.logAutoCleanup,
+  1270→                    onCheckedChange = { vm.updateLogAutoCleanup(it) },
+  1271→                    colors = SwitchDefaults.colors(
+  1272→                        checkedThumbColor = AccentPurple,
+  1273→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1274→                    )
+  1275→                )
+  1276→            }
+  1277→        )
+  1278→    }
+  1279→}
+  1280→
+  1281→@Composable
+  1282→private fun LogLevelSelector(current: LogLevel, onSelect: (LogLevel) -> Unit) {
+  1283→    Row(
+  1284→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1285→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+  1286→    ) {
+  1287→        LogLevel.entries.forEach { level ->
+  1288→            FilterChip(
+  1289→                selected = level == current,
+  1290→                onClick = { onSelect(level) },
+  1291→                label = { Text(level.label, fontSize = 10.sp) },
+  1292→                colors = FilterChipDefaults.filterChipColors(
+  1293→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+  1294→                    selectedLabelColor = AccentPurple
+  1295→                ),
+  1296→                shape = RoundedCornerShape(10.dp)
+  1297→            )
+  1298→        }
+  1299→    }
+  1300→}
+  1301→
+  1302→@Composable
+  1303→private fun LogFilesSlider(count: Int, onChange: (Int) -> Unit) {
+  1304→    Row(
+  1305→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1306→        verticalAlignment = Alignment.CenterVertically
+  1307→    ) {
+  1308→        Text("1", fontSize = 10.sp, color = TextTertiary)
+  1309→        Slider(
+  1310→            value = count.toFloat(),
+  1311→            onValueChange = { onChange(it.toInt()) },
+  1312→            valueRange = 1f..50f,
+  1313→            steps = 48,
+  1314→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+  1315→            colors = SliderDefaults.colors(
+  1316→                thumbColor = AccentGold,
+  1317→                activeTrackColor = AccentGold,
+  1318→                inactiveTrackColor = AccentGold.copy(alpha = 0.15f)
+  1319→            )
+  1320→        )
+  1321→        Text("50", fontSize = 10.sp, color = TextTertiary)
+  1322→    }
+  1323→}
+  1324→
+  1325→@Composable
+  1326→private fun SchedulingGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1327→    GlassSettingsGroup(title = "定时任务") {
+  1328→        GlassSettingsItem(
+  1329→            label = "定时扫描",
+  1330→            subtitle = settings.scheduleTime.label,
+  1331→            icon = Icons.Default.Schedule,
+  1332→            accentColor = AccentPurple
+  1333→        )
+  1334→        ScheduleTimeSelector(settings.scheduleTime) { vm.updateScheduleTime(it) }
+  1335→    }
+  1336→}
+  1337→
+  1338→@Composable
+  1339→private fun ScheduleTimeSelector(current: ScanScheduleTime, onSelect: (ScanScheduleTime) -> Unit) {
+  1340→    Row(
+  1341→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1342→        horizontalArrangement = Arrangement.spacedBy(6.dp)
+  1343→    ) {
+  1344→        ScanScheduleTime.entries.forEach { time ->
+  1345→            FilterChip(
+  1346→                selected = time == current,
+  1347→                onClick = { onSelect(time) },
+  1348→                label = { Text(time.label, fontSize = 9.sp) },
+  1349→                colors = FilterChipDefaults.filterChipColors(
+  1350→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+  1351→                    selectedLabelColor = AccentPurple
+  1352→                ),
+  1353→                shape = RoundedCornerShape(10.dp)
+  1354→            )
+  1355→        }
+  1356→    }
+  1357→}
+  1358→
+  1359→@Composable
+  1360→private fun AdvancedGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1361→    GlassSettingsGroup(title = "高级") {
+  1362→        GlassSettingsItem(
+  1363→            label = "语言",
+  1364→            subtitle = settings.language.label,
+  1365→            icon = Icons.Default.Language,
+  1366→            accentColor = AccentPurple
+  1367→        )
+  1368→        LanguageSelector(settings.language) { vm.updateLanguage(it) }
+  1369→        GlassSettingsItem(
+  1370→            label = "实验性功能",
+  1371→            subtitle = if (settings.experimentalFeatures) "已开启" else "已关闭",
+  1372→            icon = Icons.Default.Science,
+  1373→            accentColor = AccentGold,
+  1374→            trailing = {
+  1375→                Switch(
+  1376→                    checked = settings.experimentalFeatures,
+  1377→                    onCheckedChange = { vm.updateExperimentalFeatures(it) },
+  1378→                    colors = SwitchDefaults.colors(
+  1379→                        checkedThumbColor = AccentPurple,
+  1380→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1381→                    )
+  1382→                )
+  1383→            }
+  1384→        )
+  1385→    }
+  1386→}
+  1387→
+  1388→@Composable
+  1389→private fun LanguageSelector(current: Language, onSelect: (Language) -> Unit) {
+  1390→    Row(
+  1391→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1392→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+  1393→    ) {
+  1394→        Language.entries.forEach { lang ->
+  1395→            FilterChip(
+  1396→                selected = lang == current,
+  1397→                onClick = { onSelect(lang) },
+  1398→                label = { Text(lang.label, fontSize = 10.sp) },
+  1399→                colors = FilterChipDefaults.filterChipColors(
+  1400→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+  1401→                    selectedLabelColor = AccentPurple
+  1402→                ),
+  1403→                shape = RoundedCornerShape(10.dp)
+  1404→            )
+  1405→        }
+  1406→    }
+  1407→}
+  1408→
+  1409→@Composable
+  1410→private fun PowerSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1411→    GlassSettingsGroup(title = "电源") {
+  1412→        GlassSettingsItem(
+  1413→            label = "性能配置",
+  1414→            subtitle = settings.powerProfile.label,
+  1415→            icon = Icons.Default.BatteryFull,
+  1416→            accentColor = AccentMint
+  1417→        )
+  1418→        PowerProfileSelector(settings.powerProfile) { vm.updatePowerProfile(it) }
+  1419→        GlassSettingsItem(
+  1420→            label = "省电模式",
+  1421→            subtitle = if (settings.batterySaverEnabled) "限制后台活动以节省电量" else "已关闭",
+  1422→            icon = Icons.Default.EnergySavingsLeaf,
+  1423→            accentColor = AccentGold,
+  1424→            trailing = {
+  1425→                Switch(
+  1426→                    checked = settings.batterySaverEnabled,
+  1427→                    onCheckedChange = { vm.updateBatterySaver(it) },
+  1428→                    colors = SwitchDefaults.colors(
+  1429→                        checkedThumbColor = AccentPurple,
+  1430→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1431→                    )
+  1432→                )
+  1433→            }
+  1434→        )
+  1435→    }
+  1436→}
+  1437→
+  1438→@Composable
+  1439→private fun PowerProfileSelector(current: PowerProfile, onSelect: (PowerProfile) -> Unit) {
+  1440→    Row(
+  1441→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1442→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+  1443→    ) {
+  1444→        PowerProfile.entries.forEach { profile ->
+  1445→            FilterChip(
+  1446→                selected = profile == current,
+  1447→                onClick = { onSelect(profile) },
+  1448→                label = { Text(profile.label, fontSize = 10.sp) },
+  1449→                colors = FilterChipDefaults.filterChipColors(
+  1450→                    selectedContainerColor = AccentMint.copy(alpha = 0.2f),
+  1451→                    selectedLabelColor = AccentMint
+  1452→                ),
+  1453→                shape = RoundedCornerShape(10.dp)
+  1454→            )
+  1455→        }
+  1456→    }
+  1457→}
+  1458→
+  1459→@Composable
+  1460→private fun IpcSettingsGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1461→    var socketExpanded by remember { mutableStateOf(false) }
+  1462→    var socketText by remember(settings.ipcSocketPath) { mutableStateOf(settings.ipcSocketPath) }
+  1463→
+  1464→    GlassSettingsGroup(title = "IPC 通信") {
+  1465→        GlassSettingsItem(
+  1466→            label = "通信超时",
+  1467→            subtitle = "${settings.ipcTimeoutSeconds} 秒",
+  1468→            icon = Icons.Default.Timer,
+  1469→            accentColor = AccentBlue
+  1470→        )
+  1471→        IpcTimeoutSlider(settings.ipcTimeoutSeconds) { vm.updateIpcTimeout(it) }
+  1472→        GlassSettingsItem(
+  1473→            label = "重试次数",
+  1474→            subtitle = "${settings.ipcRetryCount} 次",
+  1475→            icon = Icons.Default.Replay,
+  1476→            accentColor = AccentGold
+  1477→        )
+  1478→        IpcRetrySlider(settings.ipcRetryCount) { vm.updateIpcRetryCount(it) }
+  1479→        GlassSettingsItem(
+  1480→            label = "Socket 路径",
+  1481→            subtitle = if (settings.ipcSocketPath.isBlank()) "默认路径" else settings.ipcSocketPath,
+  1482→            icon = Icons.Default.Cable,
+  1483→            accentColor = AccentPurple,
+  1484→            onClick = { socketExpanded = !socketExpanded }
+  1485→        )
+  1486→        if (socketExpanded) {
+  1487→            Row(
+  1488→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1489→                verticalAlignment = Alignment.CenterVertically
+  1490→            ) {
+  1491→                OutlinedTextField(
+  1492→                    value = socketText,
+  1493→                    onValueChange = { socketText = it },
+  1494→                    placeholder = { Text("apex_root_sandbox", fontSize = 12.sp) },
+  1495→                    modifier = Modifier.weight(1f),
+  1496→                    singleLine = true,
+  1497→                    textStyle = MaterialTheme.typography.bodySmall,
+  1498→                    colors = OutlinedTextFieldDefaults.colors(
+  1499→                        focusedBorderColor = AccentPurple,
+  1500→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+  1501→                    ),
+  1502→                    shape = RoundedCornerShape(10.dp)
+  1503→                )
+  1504→                Spacer(Modifier.width(8.dp))
+  1505→                Button(
+  1506→                    onClick = { vm.updateIpcSocketPath(socketText) },
+  1507→                    shape = RoundedCornerShape(10.dp),
+  1508→                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+  1509→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+  1510→                ) { Text("保存", fontSize = 11.sp) }
+  1511→            }
+  1512→        }
+  1513→    }
+  1514→}
+  1515→
+  1516→@Composable
+  1517→private fun IpcTimeoutSlider(seconds: Int, onChange: (Int) -> Unit) {
+  1518→    Row(
+  1519→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1520→        verticalAlignment = Alignment.CenterVertically
+  1521→    ) {
+  1522→        Text("1s", fontSize = 10.sp, color = TextTertiary)
+  1523→        Slider(
+  1524→            value = seconds.toFloat(),
+  1525→            onValueChange = { onChange(it.toInt()) },
+  1526→            valueRange = 1f..60f,
+  1527→            steps = 58,
+  1528→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+  1529→            colors = SliderDefaults.colors(
+  1530→                thumbColor = AccentBlue,
+  1531→                activeTrackColor = AccentBlue,
+  1532→                inactiveTrackColor = AccentBlue.copy(alpha = 0.15f)
+  1533→            )
+  1534→        )
+  1535→        Text("60s", fontSize = 10.sp, color = TextTertiary)
+  1536→    }
+  1537→}
+  1538→
+  1539→@Composable
+  1540→private fun IpcRetrySlider(count: Int, onChange: (Int) -> Unit) {
+  1541→    Row(
+  1542→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1543→        verticalAlignment = Alignment.CenterVertically
+  1544→    ) {
+  1545→        Text("0", fontSize = 10.sp, color = TextTertiary)
+  1546→        Slider(
+  1547→            value = count.toFloat(),
+  1548→            onValueChange = { onChange(it.toInt()) },
+  1549→            valueRange = 0f..20f,
+  1550→            steps = 19,
+  1551→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+  1552→            colors = SliderDefaults.colors(
+  1553→                thumbColor = AccentGold,
+  1554→                activeTrackColor = AccentGold,
+  1555→                inactiveTrackColor = AccentGold.copy(alpha = 0.15f)
+  1556→            )
+  1557→        )
+  1558→        Text("20", fontSize = 10.sp, color = TextTertiary)
+  1559→    }
+  1560→}
+  1561→
+  1562→@Composable
+  1563→private fun WatchdogGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1564→    GlassSettingsGroup(title = "看门狗") {
+  1565→        GlassSettingsItem(
+  1566→            label = "健康检查",
+  1567→            subtitle = if (settings.watchdogEnabled) "定期检查进程状态" else "已关闭",
+  1568→            icon = Icons.Default.Monitor,
+  1569→            accentColor = AccentMint,
+  1570→            trailing = {
+  1571→                Switch(
+  1572→                    checked = settings.watchdogEnabled,
+  1573→                    onCheckedChange = { vm.updateWatchdogEnabled(it) },
+  1574→                    colors = SwitchDefaults.colors(
+  1575→                        checkedThumbColor = AccentPurple,
+  1576→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1577→                    )
+  1578→                )
+  1579→            }
+  1580→        )
+  1581→        if (settings.watchdogEnabled) {
+  1582→            GlassSettingsItem(
+  1583→                label = "检查间隔",
+  1584→                subtitle = "${settings.watchdogIntervalSeconds} 秒",
+  1585→                icon = Icons.Default.Timer,
+  1586→                accentColor = AccentBlue
+  1587→            )
+  1588→            WatchdogIntervalSlider(settings.watchdogIntervalSeconds) { vm.updateWatchdogInterval(it) }
+  1589→            GlassSettingsItem(
+  1590→                label = "自动重启",
+  1591→                subtitle = if (settings.watchdogAutoRestart) "检测到异常自动重启进程" else "仅告警",
+  1592→                icon = Icons.Default.RestartAlt,
+  1593→                accentColor = ErrorRed,
+  1594→                trailing = {
+  1595→                    Switch(
+  1596→                        checked = settings.watchdogAutoRestart,
+  1597→                        onCheckedChange = { vm.updateWatchdogAutoRestart(it) },
+  1598→                        colors = SwitchDefaults.colors(
+  1599→                            checkedThumbColor = AccentPurple,
+  1600→                            checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1601→                        )
+  1602→                    )
+  1603→                }
+  1604→            )
+  1605→        }
+  1606→    }
+  1607→}
+  1608→
+  1609→@Composable
+  1610→private fun WatchdogIntervalSlider(seconds: Int, onChange: (Int) -> Unit) {
+  1611→    Row(
+  1612→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1613→        verticalAlignment = Alignment.CenterVertically
+  1614→    ) {
+  1615→        Text("5s", fontSize = 10.sp, color = TextTertiary)
+  1616→        Slider(
+  1617→            value = seconds.toFloat(),
+  1618→            onValueChange = { onChange(it.toInt()) },
+  1619→            valueRange = 5f..300f,
+  1620→            steps = 58,
+  1621→            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+  1622→            colors = SliderDefaults.colors(
+  1623→                thumbColor = AccentBlue,
+  1624→                activeTrackColor = AccentBlue,
+  1625→                inactiveTrackColor = AccentBlue.copy(alpha = 0.15f)
+  1626→            )
+  1627→        )
+  1628→        Text("300s", fontSize = 10.sp, color = TextTertiary)
+  1629→    }
+  1630→}
+  1631→
+  1632→@Composable
+  1633→private fun AntiDetectionGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1634→    GlassSettingsGroup(title = "反检测") {
+  1635→        GlassSettingsItem(
+  1636→            label = "混淆级别",
+  1637→            subtitle = settings.obfuscationLevel.label,
+  1638→            icon = Icons.Default.Blind,
+  1639→            accentColor = AccentPurple
+  1640→        )
+  1641→        ObfuscationLevelSelector(settings.obfuscationLevel) { vm.updateObfuscationLevel(it) }
+  1642→        GlassSettingsItem(
+  1643→            label = "CPU 随机绑定",
+  1644→            subtitle = if (settings.cpuRandomAffinity) "每次检测随机绑定 CPU 核心" else "固定核心",
+  1645→            icon = Icons.Default.Memory,
+  1646→            accentColor = AccentGold,
+  1647→            trailing = {
+  1648→                Switch(
+  1649→                    checked = settings.cpuRandomAffinity,
+  1650→                    onCheckedChange = { vm.updateCpuRandomAffinity(it) },
+  1651→                    colors = SwitchDefaults.colors(
+  1652→                        checkedThumbColor = AccentPurple,
+  1653→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1654→                    )
+  1655→                )
+  1656→            }
+  1657→        )
+  1658→    }
+  1659→}
+  1660→
+  1661→@Composable
+  1662→private fun ObfuscationLevelSelector(current: ObfuscationLevel, onSelect: (ObfuscationLevel) -> Unit) {
+  1663→    Row(
+  1664→        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1665→        horizontalArrangement = Arrangement.spacedBy(8.dp)
+  1666→    ) {
+  1667→        ObfuscationLevel.entries.forEach { level ->
+  1668→            FilterChip(
+  1669→                selected = level == current,
+  1670→                onClick = { onSelect(level) },
+  1671→                label = { Text(level.label, fontSize = 10.sp) },
+  1672→                colors = FilterChipDefaults.filterChipColors(
+  1673→                    selectedContainerColor = AccentPurple.copy(alpha = 0.2f),
+  1674→                    selectedLabelColor = AccentPurple
+  1675→                ),
+  1676→                shape = RoundedCornerShape(10.dp)
+  1677→            )
+  1678→        }
+  1679→    }
+  1680→}
+  1681→
+  1682→@Composable
+  1683→private fun WhitelistGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1684→    var whitelistExpanded by remember { mutableStateOf(false) }
+  1685→    var exclusionExpanded by remember { mutableStateOf(false) }
+  1686→    var keywordExpanded by remember { mutableStateOf(false) }
+  1687→    var hidePathExpanded by remember { mutableStateOf(false) }
+  1688→    var whitelistText by remember(settings.whitelistApps) { mutableStateOf(settings.whitelistApps) }
+  1689→    var exclusionText by remember(settings.scanExclusions) { mutableStateOf(settings.scanExclusions) }
+  1690→    var keywordText by remember(settings.customDetectionKeywords) { mutableStateOf(settings.customDetectionKeywords) }
+  1691→    var hidePathText by remember(settings.customHidePaths) { mutableStateOf(settings.customHidePaths) }
+  1692→
+  1693→    GlassSettingsGroup(title = "白名单 & 排除") {
+  1694→        GlassSettingsItem(
+  1695→            label = "应用白名单",
+  1696→            subtitle = if (settings.whitelistApps.isBlank()) "未设置" else "${settings.whitelistApps.split(",").size} 个应用",
+  1697→            icon = Icons.Default.Apps,
+  1698→            accentColor = AccentMint,
+  1699→            onClick = { whitelistExpanded = !whitelistExpanded }
+  1700→        )
+  1701→        if (whitelistExpanded) {
+  1702→            Row(
+  1703→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1704→                verticalAlignment = Alignment.CenterVertically
+  1705→            ) {
+  1706→                OutlinedTextField(
+  1707→                    value = whitelistText,
+  1708→                    onValueChange = { whitelistText = it },
+  1709→                    placeholder = { Text("com.example.app,com.other.app", fontSize = 11.sp) },
+  1710→                    modifier = Modifier.weight(1f),
+  1711→                    singleLine = true,
+  1712→                    textStyle = MaterialTheme.typography.bodySmall,
+  1713→                    colors = OutlinedTextFieldDefaults.colors(
+  1714→                        focusedBorderColor = AccentMint,
+  1715→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+  1716→                    ),
+  1717→                    shape = RoundedCornerShape(10.dp)
+  1718→                )
+  1719→                Spacer(Modifier.width(8.dp))
+  1720→                Button(
+  1721→                    onClick = { vm.updateWhitelistApps(whitelistText) },
+  1722→                    shape = RoundedCornerShape(10.dp),
+  1723→                    colors = ButtonDefaults.buttonColors(containerColor = AccentMint),
+  1724→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+  1725→                ) { Text("保存", fontSize = 11.sp) }
+  1726→            }
+  1727→        }
+  1728→        GlassSettingsItem(
+  1729→            label = "扫描排除路径",
+  1730→            subtitle = if (settings.scanExclusions.isBlank()) "未设置" else "${settings.scanExclusions.split(",").size} 个路径",
+  1731→            icon = Icons.Default.FolderOff,
+  1732→            accentColor = AccentBlue,
+  1733→            onClick = { exclusionExpanded = !exclusionExpanded }
+  1734→        )
+  1735→        if (exclusionExpanded) {
+  1736→            Row(
+  1737→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1738→                verticalAlignment = Alignment.CenterVertically
+  1739→            ) {
+  1740→                OutlinedTextField(
+  1741→                    value = exclusionText,
+  1742→                    onValueChange = { exclusionText = it },
+  1743→                    placeholder = { Text("/data/local/tmp,/sdcard/Download", fontSize = 11.sp) },
+  1744→                    modifier = Modifier.weight(1f),
+  1745→                    singleLine = true,
+  1746→                    textStyle = MaterialTheme.typography.bodySmall,
+  1747→                    colors = OutlinedTextFieldDefaults.colors(
+  1748→                        focusedBorderColor = AccentBlue,
+  1749→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+  1750→                    ),
+  1751→                    shape = RoundedCornerShape(10.dp)
+  1752→                )
+  1753→                Spacer(Modifier.width(8.dp))
+  1754→                Button(
+  1755→                    onClick = { vm.updateScanExclusions(exclusionText) },
+  1756→                    shape = RoundedCornerShape(10.dp),
+  1757→                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+  1758→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+  1759→                ) { Text("保存", fontSize = 11.sp) }
+  1760→            }
+  1761→        }
+  1762→        GlassSettingsItem(
+  1763→            label = "自定义检测关键词",
+  1764→            subtitle = if (settings.customDetectionKeywords.isBlank()) "未设置" else "${settings.customDetectionKeywords.split(",").size} 个关键词",
+  1765→            icon = Icons.Default.ManageSearch,
+  1766→            accentColor = AccentGold,
+  1767→            onClick = { keywordExpanded = !keywordExpanded }
+  1768→        )
+  1769→        if (keywordExpanded) {
+  1770→            Row(
+  1771→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1772→                verticalAlignment = Alignment.CenterVertically
+  1773→            ) {
+  1774→                OutlinedTextField(
+  1775→                    value = keywordText,
+  1776→                    onValueChange = { keywordText = it },
+  1777→                    placeholder = { Text("magisk,zygisk,ksu", fontSize = 11.sp) },
+  1778→                    modifier = Modifier.weight(1f),
+  1779→                    singleLine = true,
+  1780→                    textStyle = MaterialTheme.typography.bodySmall,
+  1781→                    colors = OutlinedTextFieldDefaults.colors(
+  1782→                        focusedBorderColor = AccentGold,
+  1783→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+  1784→                    ),
+  1785→                    shape = RoundedCornerShape(10.dp)
+  1786→                )
+  1787→                Spacer(Modifier.width(8.dp))
+  1788→                Button(
+  1789→                    onClick = { vm.updateCustomDetectionKeywords(keywordText) },
+  1790→                    shape = RoundedCornerShape(10.dp),
+  1791→                    colors = ButtonDefaults.buttonColors(containerColor = AccentGold),
+  1792→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+  1793→                ) { Text("保存", fontSize = 11.sp) }
+  1794→            }
+  1795→        }
+  1796→        GlassSettingsItem(
+  1797→            label = "自定义隐藏路径",
+  1798→            subtitle = if (settings.customHidePaths.isBlank()) "未设置" else "${settings.customHidePaths.split(",").size} 个路径",
+  1799→            icon = Icons.Default.HideSource,
+  1800→            accentColor = ErrorRed,
+  1801→            onClick = { hidePathExpanded = !hidePathExpanded }
+  1802→        )
+  1803→        if (hidePathExpanded) {
+  1804→            Row(
+  1805→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1806→                verticalAlignment = Alignment.CenterVertically
+  1807→            ) {
+  1808→                OutlinedTextField(
+  1809→                    value = hidePathText,
+  1810→                    onValueChange = { hidePathText = it },
+  1811→                    placeholder = { Text("/data/adb/magisk,/system/bin/su", fontSize = 11.sp) },
+  1812→                    modifier = Modifier.weight(1f),
+  1813→                    singleLine = true,
+  1814→                    textStyle = MaterialTheme.typography.bodySmall,
+  1815→                    colors = OutlinedTextFieldDefaults.colors(
+  1816→                        focusedBorderColor = ErrorRed,
+  1817→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+  1818→                    ),
+  1819→                    shape = RoundedCornerShape(10.dp)
+  1820→                )
+  1821→                Spacer(Modifier.width(8.dp))
+  1822→                Button(
+  1823→                    onClick = { vm.updateCustomHidePaths(hidePathText) },
+  1824→                    shape = RoundedCornerShape(10.dp),
+  1825→                    colors = ButtonDefaults.buttonColors(containerColor = ErrorRed),
+  1826→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+  1827→                ) { Text("保存", fontSize = 11.sp) }
+  1828→            }
+  1829→        }
+  1830→    }
+  1831→}
+  1832→
+  1833→@Composable
+  1834→private fun HardeningGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1835→    GlassSettingsGroup(title = "安全加固") {
+  1836→        GlassSettingsItem(
+  1837→            label = "Boot 校验",
+  1838→            subtitle = if (settings.verifyBootEnabled) "验证 Boot 分区完整性" else "已关闭",
+  1839→            icon = Icons.Default.Verified,
+  1840→            accentColor = AccentMint,
+  1841→            trailing = {
+  1842→                Switch(
+  1843→                    checked = settings.verifyBootEnabled,
+  1844→                    onCheckedChange = { vm.updateVerifyBoot(it) },
+  1845→                    colors = SwitchDefaults.colors(
+  1846→                        checkedThumbColor = AccentPurple,
+  1847→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1848→                    )
+  1849→                )
+  1850→            }
+  1851→        )
+  1852→        GlassSettingsItem(
+  1853→            label = "KeyStore 校验",
+  1854→            subtitle = if (settings.keystoreCheckEnabled) "验证 KeyStore 完整性" else "已关闭",
+  1855→            icon = Icons.Default.Key,
+  1856→            accentColor = AccentGold,
+  1857→            trailing = {
+  1858→                Switch(
+  1859→                    checked = settings.keystoreCheckEnabled,
+  1860→                    onCheckedChange = { vm.updateKeystoreCheck(it) },
+  1861→                    colors = SwitchDefaults.colors(
+  1862→                        checkedThumbColor = AccentPurple,
+  1863→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1864→                    )
+  1865→                )
+  1866→            }
+  1867→        )
+  1868→        GlassSettingsItem(
+  1869→            label = "SELinux 强制检查",
+  1870→            subtitle = if (settings.selinuxEnforceCheck) "检测 SELinux 状态是否被修改" else "已关闭",
+  1871→            icon = Icons.Default.Security,
+  1872→            accentColor = ErrorRed,
+  1873→            trailing = {
+  1874→                Switch(
+  1875→                    checked = settings.selinuxEnforceCheck,
+  1876→                    onCheckedChange = { vm.updateSelinuxEnforceCheck(it) },
+  1877→                    colors = SwitchDefaults.colors(
+  1878→                        checkedThumbColor = AccentPurple,
+  1879→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1880→                    )
+  1881→                )
+  1882→            }
+  1883→        )
+  1884→    }
+  1885→}
+  1886→
+  1887→@Composable
+  1888→private fun StealthGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1889→    var fakeNameExpanded by remember { mutableStateOf(false) }
+  1890→    var fakeNameText by remember(settings.stealthFakeAppName) { mutableStateOf(settings.stealthFakeAppName) }
+  1891→
+  1892→    GlassSettingsGroup(title = "隐身") {
+  1893→        GlassSettingsItem(
+  1894→            label = "隐藏桌面图标",
+  1895→            subtitle = if (settings.stealthHideIcon) "启动器中将不再显示应用图标" else "已关闭",
+  1896→            icon = Icons.Default.VisibilityOff,
+  1897→            accentColor = AccentPurple,
+  1898→            trailing = {
+  1899→                Switch(
+  1900→                    checked = settings.stealthHideIcon,
+  1901→                    onCheckedChange = { vm.updateStealthHideIcon(it) },
+  1902→                    colors = SwitchDefaults.colors(
+  1903→                        checkedThumbColor = AccentPurple,
+  1904→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1905→                    )
+  1906→                )
+  1907→            }
+  1908→        )
+  1909→        GlassSettingsItem(
+  1910→            label = "隐藏最近任务",
+  1911→            subtitle = if (settings.stealthHideRecent) "在多任务界面隐藏应用" else "已关闭",
+  1912→            icon = Icons.Default.HideImage,
+  1913→            accentColor = AccentBlue,
+  1914→            trailing = {
+  1915→                Switch(
+  1916→                    checked = settings.stealthHideRecent,
+  1917→                    onCheckedChange = { vm.updateStealthHideRecent(it) },
+  1918→                    colors = SwitchDefaults.colors(
+  1919→                        checkedThumbColor = AccentPurple,
+  1920→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1921→                    )
+  1922→                )
+  1923→            }
+  1924→        )
+  1925→        GlassSettingsItem(
+  1926→            label = "隐藏通知栏",
+  1927→            subtitle = if (settings.stealthHideNotification) "通知栏中不显示任何来自本应用的通知" else "已关闭",
+  1928→            icon = Icons.Default.NotificationsOff,
+  1929→            accentColor = AccentGold,
+  1930→            trailing = {
+  1931→                Switch(
+  1932→                    checked = settings.stealthHideNotification,
+  1933→                    onCheckedChange = { vm.updateStealthHideNotification(it) },
+  1934→                    colors = SwitchDefaults.colors(
+  1935→                        checkedThumbColor = AccentPurple,
+  1936→                        checkedTrackColor = AccentPurple.copy(alpha = 0.25f)
+  1937→                    )
+  1938→                )
+  1939→            }
+  1940→        )
+  1941→        GlassSettingsItem(
+  1942→            label = "伪装应用名称",
+  1943→            subtitle = if (settings.stealthFakeAppName.isNotBlank()) settings.stealthFakeAppName else "未设置",
+  1944→            icon = Icons.Default.Edit,
+  1945→            accentColor = AccentMint,
+  1946→            onClick = { fakeNameExpanded = !fakeNameExpanded }
+  1947→        )
+  1948→        if (fakeNameExpanded) {
+  1949→            Row(
+  1950→                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 4.dp),
+  1951→                verticalAlignment = Alignment.CenterVertically
+  1952→            ) {
+  1953→                OutlinedTextField(
+  1954→                    value = fakeNameText,
+  1955→                    onValueChange = { fakeNameText = it },
+  1956→                    placeholder = { Text("系统工具", fontSize = 11.sp) },
+  1957→                    modifier = Modifier.weight(1f),
+  1958→                    singleLine = true,
+  1959→                    textStyle = MaterialTheme.typography.bodySmall,
+  1960→                    colors = OutlinedTextFieldDefaults.colors(
+  1961→                        focusedBorderColor = AccentMint,
+  1962→                        unfocusedBorderColor = Color.White.copy(alpha = 0.10f)
+  1963→                    ),
+  1964→                    shape = RoundedCornerShape(10.dp)
+  1965→                )
+  1966→                Spacer(Modifier.width(8.dp))
+  1967→                Button(
+  1968→                    onClick = { vm.updateStealthFakeAppName(fakeNameText) },
+  1969→                    shape = RoundedCornerShape(10.dp),
+  1970→                    colors = ButtonDefaults.buttonColors(containerColor = AccentMint),
+  1971→                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+  1972→                ) { Text("保存", fontSize = 11.sp) }
+  1973→            }
+  1974→        }
+  1975→    }
+  1976→}
+  1977→
+  1978→@Composable
+  1979→private fun EmergencyGroup(settings: AppSettings, vm: SettingsViewModel) {
+  1980→    GlassSettingsGroup(title = "应急响应") {
+  1981→        GlassSettingsItem(
+  1982→            label = "锁定设备",
+  1983→            subtitle = if (settings.emergencyLockDevice) "检测到风险时立即锁定设备" else "已关闭",
+  1984→            icon = Icons.Default.Lock,
+  1985→            accentColor = ErrorRed,
+  1986→            trailing = {
+  1987→                Switch(
+  1988→                    checked = settings.emergencyLockDevice,
+  1989→                    onCheckedChange = { vm.updateEmergencyLockDevice(it) },
+  1990→                    colors = SwitchDefaults.colors(
+  1991→                        checkedThumbColor = ErrorRed,
+  1992→                        checkedTrackColor = ErrorRed.copy(alpha = 0.25f)
+  1993→                    )
+  1994→                )
+  1995→            }
+  1996→        )
+  1997→        GlassSettingsItem(
+  1998→            label = "擦除数据",
+  1999→            subtitle = if (settings.emergencyWipeData) "检测到严重风险时远程擦除数据" else "已关闭",
+  2000→            icon = Icons.Default.DeleteForever,
+
+[showing lines 1-2000 of 5320; use offset=2001 with limit to continue reading]

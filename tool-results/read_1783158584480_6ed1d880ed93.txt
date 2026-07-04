@@ -1,0 +1,541 @@
+     1→package com.apex.root.data
+     2→
+     3→data class FixRecommendation(
+     4→    val id: String,
+     5→    val titleZh: String,
+     6→    val titleEn: String,
+     7→    val descriptionZh: String,
+     8→    val descriptionEn: String,
+     9→    val stepsZh: List<String>,
+    10→    val stepsEn: List<String>,
+    11→    val priority: Int,
+    12→    val oneClickFixAvailable: Boolean = false
+    13→)
+    14→
+    15→object FixRecommendations {
+    16→    private val recommendations: Map<String, FixRecommendation> = mapOf(
+    17→        "属性" to FixRecommendation(
+    18→            id = "properties",
+    19→            titleZh = "系统属性异常",
+    20→            titleEn = "System Properties Abnormal",
+    21→            descriptionZh = "检测到可疑系统属性，可能存在 Root 工具修改了系统属性以隐藏 Root 状态。",
+    22→            descriptionEn = "Detected suspicious system properties. Root tools may have modified system properties to hide Root status.",
+    23→            stepsZh = listOf(
+    24→                "1. 打开终端模拟器或 ADB Shell",
+    25→                "2. 执行 getprop 查看所有系统属性",
+    26→                "3. 检查 ro.debuggable、ro.secure、ro.build.tags 等关键属性",
+    27→                "4. 如发现异常值（如 ro.debuggable=1），说明系统被修改",
+    28→                "5. 建议：恢复官方固件或刷入官方 Boot 镜像",
+    29→                "6. 使用 fastboot oem unlock 解锁 Bootloader 后重新刷入官方 ROM"
+    30→            ),
+    31→            stepsEn = listOf(
+    32→                "1. Open terminal emulator or ADB Shell",
+    33→                "2. Run getprop to view all system properties",
+    34→                "3. Check key properties: ro.debuggable, ro.secure, ro.build.tags",
+    35→                "4. If abnormal values found (e.g., ro.debuggable=1), system has been modified",
+    36→                "5. Recommendation: Restore official firmware or flash official boot image",
+    37→                "6. Use fastboot oem unlock to unlock bootloader, then reflash official ROM"
+    38→            ),
+    39→            priority = 8
+    40→        ),
+    41→        "文件" to FixRecommendation(
+    42→            id = "files",
+    43→            titleZh = "Root 相关文件",
+    44→            titleEn = "Root-Related Files Detected",
+    45→            descriptionZh = "检测到系统中存在 Root 工具相关文件（如 su 二进制文件、Magisk 文件等）。",
+    46→            descriptionEn = "Detected Root tool related files in the system (e.g., su binary, Magisk files).",
+    47→            stepsZh = listOf(
+    48→                "1. 打开文件管理器（需具有 Root 权限查看能力）",
+    49→                "2. 检查 /system/bin/su、/system/xbin/su 是否存在",
+    50→                "3. 检查 /data/adb/magisk、/cache/magisk.log 等 Magisk 相关文件",
+    51→                "4. 检查 /system/app/Superuser.apk 等超级用户管理应用",
+    52→                "5. 建议：卸载所有 Root 工具（Magisk、SuperSU 等）",
+    53→                "6. 通过 Magisk 的\"完全卸载\"功能，或手动删除相关文件",
+    54→                "7. 恢复官方 Boot 镜像并重启设备"
+    55→            ),
+    56→            stepsEn = listOf(
+    57→                "1. Open file manager (with Root permission viewing capability)",
+    58→                "2. Check if /system/bin/su, /system/xbin/su exist",
+    59→                "3. Check Magisk related files: /data/adb/magisk, /cache/magisk.log",
+    60→                "4. Check superuser management apps: /system/app/Superuser.apk",
+    61→                "5. Recommendation: Uninstall all Root tools (Magisk, SuperSU, etc.)",
+    62→                "6. Use Magisk's 'Uninstall' feature, or manually delete related files",
+    63→                "7. Restore official boot image and reboot device"
+    64→            ),
+    65→            priority = 9
+    66→        ),
+    67→        "内存" to FixRecommendation(
+    68→            id = "memory",
+    69→            titleZh = "内存特征异常",
+    70→            titleEn = "Memory Fingerprint Abnormal",
+    71→            descriptionZh = "在内存中检测到 Root 工具的特征码或运行痕迹，可能存在正在运行的 Root 进程。",
+    72→            descriptionEn = "Detected Root tool signatures or running traces in memory. Root processes may be running.",
+    73→            stepsZh = listOf(
+    74→                "1. 重启设备，这是最简单的清除内存痕迹的方法",
+    75→                "2. 重启后不要打开任何 Root 管理工具",
+    76→                "3. 安装一个可靠的设备安全扫描应用进行检查",
+    77→                "4. 如问题持续存在，检查是否有开机自启动的 Root 工具",
+    78→                "5. 进入安全模式（长按电源键 → 长按\"关机\"）",
+    79→                "6. 在安全模式下卸载所有可疑应用",
+    80→                "7. 如仍无法解决，建议恢复出厂设置"
+    81→            ),
+    82→            stepsEn = listOf(
+    83→                "1. Reboot device - simplest way to clear memory traces",
+    84→                "2. After reboot, do not open any Root management tools",
+    85→                "3. Install a reliable device security scanner to check",
+    86→                "4. If issue persists, check for auto-start Root tools on boot",
+    87→                "5. Enter Safe Mode (long press power → long press 'Power off')",
+    88→                "6. Uninstall all suspicious apps in Safe Mode",
+    89→                "7. If still unresolved, recommend factory reset"
+    90→            ),
+    91→            priority = 7
+    92→        ),
+    93→        "挂载" to FixRecommendation(
+    94→            id = "mount",
+    95→            titleZh = "挂载命名空间异常",
+    96→            titleEn = "Mount Namespace Abnormal",
+    97→            descriptionZh = "检测到挂载命名空间异常，可能存在进程级 Root 隐藏机制（如 Magisk 的 Mount Namespace 隔离）。",
+    98→            descriptionEn = "Detected mount namespace abnormality. Process-level Root hiding mechanism may exist (e.g., Magisk Mount Namespace isolation).",
+    99→            stepsZh = listOf(
+   100→                "1. 通过 ADB 连接设备",
+   101→                "2. 执行 adb shell cat /proc/self/mountinfo 查看挂载信息",
+   102→                "3. 对比不同进程的挂载信息是否一致",
+   103→                "4. 如发现某些进程的挂载视图不同，说明存在 Namespace 隔离",
+   104→                "5. 建议：关闭 Magisk 的\"挂载命名空间\"功能",
+   105→                "6. 打开 Magisk 设置 → 关闭\"Mount Namespace Mode\"",
+   106→                "7. 如不使用 Magisk，建议恢复官方固件"
+   107→            ),
+   108→            stepsEn = listOf(
+   109→                "1. Connect device via ADB",
+   110→                "2. Run adb shell cat /proc/self/mountinfo to view mount info",
+   111→                "3. Compare mount info across different processes",
+   112→                "4. If mount views differ, Namespace isolation exists",
+   113→                "5. Recommendation: Disable Magisk's 'Mount Namespace' feature",
+   114→                "6. Open Magisk Settings → Disable 'Mount Namespace Mode'",
+   115→                "7. If not using Magisk, recommend restoring official firmware"
+   116→            ),
+   117→            priority = 8
+   118→        ),
+   119→        "APatch" to FixRecommendation(
+   120→            id = "apatch",
+   121→            titleZh = "APatch 特征",
+   122→            titleEn = "APatch Signature Detected",
+   123→            descriptionZh = "检测到 APatch 特征。APatch 是一种基于内核的 Root 工具，通过修补内核镜像实现 Root，隐蔽性极强。",
+   124→            descriptionEn = "Detected APatch signature. APatch is a kernel-based Root tool that achieves Root by patching the kernel image, with extremely high stealth.",
+   125→            stepsZh = listOf(
+   126→                "1. APatch 通过修改内核实现 Root，普通方法难以检测和清除",
+   127→                "2. 检查 /data/adb/ap/ 目录是否存在 APatch 相关文件",
+   128→                "3. 检查 boot 镜像是否被修改：adb shell dumpsys bootcontrol",
+   129→                "4. 建议：刷入官方内核镜像（boot.img）",
+   130→                "5. 从官方 ROM 提取 boot.img 并通过 fastboot 刷入",
+   131→                "6. 执行: fastboot flash boot boot.img",
+   132→                "7. 如不确定官方镜像来源，建议完整恢复官方固件",
+   133→                "8. 清除所有数据并恢复出厂设置"
+   134→            ),
+   135→            stepsEn = listOf(
+   136→                "1. APatch achieves Root via kernel patching, hard to detect/remove by normal means",
+   137→                "2. Check if /data/adb/ap/ directory contains APatch related files",
+   138→                "3. Check if boot image is modified: adb shell dumpsys bootcontrol",
+   139→                "4. Recommendation: Flash official kernel image (boot.img)",
+   140→                "5. Extract boot.img from official ROM and flash via fastboot",
+   141→                "6. Run: fastboot flash boot boot.img",
+   142→                "7. If unsure about official image source, fully restore official firmware",
+   143→                "8. Wipe all data and perform factory reset"
+   144→            ),
+   145→            priority = 10
+   146→        ),
+   147→        "SELinux" to FixRecommendation(
+   148→            id = "selinux",
+   149→            titleZh = "SELinux 策略异常",
+   150→            titleEn = "SELinux Policy Abnormal",
+   151→            descriptionZh = "检测到 SELinux 上下文或策略异常，Root 工具可能修改了 SELinux 策略以允许特权操作。",
+   152→            descriptionEn = "Detected SELinux context or policy abnormality. Root tools may have modified SELinux policies to allow privileged operations.",
+   153→            stepsZh = listOf(
+   154→                "1. 通过 ADB 检查 SELinux 状态: adb shell getenforce",
+   155→                "2. 正常应为 Enforcing，如为 Permissive 则被修改",
+   156→                "3. 检查 SELinux 策略: adb shell sesearch --allow | grep su",
+   157→                "4. 如发现异常策略规则，说明策略被篡改",
+   158→                "5. 建议：恢复 SELinux 为 Enforcing 模式",
+   159→                "6. 执行: adb shell setenforce 1（临时恢复）",
+   160→                "7. 永久修复需刷入官方 boot.img 或恢复出厂设置",
+   161→                "8. 检查 /sys/fs/selinux/policy 文件哈希是否与官方一致"
+   162→            ),
+   163→            stepsEn = listOf(
+   164→                "1. Check SELinux status via ADB: adb shell getenforce",
+   165→                "2. Should be Enforcing; if Permissive, it has been modified",
+   166→                "3. Check SELinux policy: adb shell sesearch --allow | grep su",
+   167→                "4. If abnormal policy rules found, policy has been tampered",
+   168→                "5. Recommendation: Restore SELinux to Enforcing mode",
+   169→                "6. Run: adb shell setenforce 1 (temporary restore)",
+   170→                "7. Permanent fix requires flashing official boot.img or factory reset",
+   171→                "8. Check /sys/fs/selinux/policy file hash against official version"
+   172→            ),
+   173→            priority = 8
+   174→        ),
+   175→        "内核" to FixRecommendation(
+   176→            id = "kernel",
+   177→            titleZh = "内核异常",
+   178→            titleEn = "Kernel Abnormal",
+   179→            descriptionZh = "检测到内核存在异常修改痕迹，可能被植入了 Root 相关的内核模块或补丁。",
+   180→            descriptionEn = "Detected abnormal kernel modifications. Root-related kernel modules or patches may have been injected.",
+   181→            stepsZh = listOf(
+   182→                "1. 检查当前内核版本: adb shell uname -a",
+   183→                "2. 对比官方内核版本信息，确认是否被修改",
+   184→                "3. 检查内核命令行参数: adb shell cat /proc/cmdline",
+   185→                "4. 查看已加载的内核模块: adb shell lsmod",
+   186→                "5. 建议：刷入官方内核镜像",
+   187→                "6. 从设备官方 ROM 中提取 boot.img",
+   188→                "7. 通过 fastboot 模式刷入: fastboot flash boot boot.img",
+   189→                "8. 重启设备并验证内核版本是否恢复正常",
+   190→                "9. 如问题持续，建议完整恢复官方固件"
+   191→            ),
+   192→            stepsEn = listOf(
+   193→                "1. Check current kernel version: adb shell uname -a",
+   194→                "2. Compare with official kernel version to confirm modifications",
+   195→                "3. Check kernel command line: adb shell cat /proc/cmdline",
+   196→                "4. View loaded kernel modules: adb shell lsmod",
+   197→                "5. Recommendation: Flash official kernel image",
+   198→                "6. Extract boot.img from device's official ROM",
+   199→                "7. Flash via fastboot: fastboot flash boot boot.img",
+   200→                "8. Reboot and verify kernel version is restored",
+   201→                "9. If issue persists, fully restore official firmware"
+   202→            ),
+   203→            priority = 10
+   204→        ),
+   205→        "内核模块" to FixRecommendation(
+   206→            id = "kernel_modules",
+   207→            titleZh = "可疑内核模块",
+   208→            titleEn = "Suspicious Kernel Modules",
+   209→            descriptionZh = "检测到可疑的内核模块被加载，这些模块可能用于隐藏 Root 状态或提供内核级特权功能。",
+   210→            descriptionEn = "Detected suspicious kernel modules loaded. These modules may hide Root status or provide kernel-level privileged functions.",
+   211→            stepsZh = listOf(
+   212→                "1. 列出所有已加载内核模块: adb shell lsmod",
+   213→                "2. 对比官方模块列表，识别可疑模块",
+   214→                "3. 检查模块路径: adb shell cat /proc/modules",
+   215→                "4. 查看模块签名状态（如支持）",
+   216→                "5. 建议：卸载可疑内核模块",
+   217→                "6. 执行: adb shell rmmod <模块名>（需要 Root 权限）",
+   218→                "7. 检查 /system/lib/modules/ 或 /vendor/lib/modules/ 中的模块文件",
+   219→                "8. 删除非官方模块文件",
+   220→                "9. 重启设备验证模块是否不再自动加载",
+   221→                "10. 如无法手动清除，建议刷入官方固件"
+   222→            ),
+   223→            stepsEn = listOf(
+   224→                "1. List all loaded kernel modules: adb shell lsmod",
+   225→                "2. Compare with official module list to identify suspicious ones",
+   226→                "3. Check module paths: adb shell cat /proc/modules",
+   227→                "4. Check module signature status (if supported)",
+   228→                "5. Recommendation: Unload suspicious kernel modules",
+   229→                "6. Run: adb shell rmmod <module_name> (requires Root)",
+   230→                "7. Check module files in /system/lib/modules/ or /vendor/lib/modules/",
+   231→                "8. Delete unofficial module files",
+   232→                "9. Reboot to verify modules don't auto-load",
+   233→                "10. If cannot manually remove, recommend flashing official firmware"
+   234→            ),
+   235→            priority = 9
+   236→        ),
+   237→        "系统调用时序" to FixRecommendation(
+   238→            id = "syscall_timing",
+   239→            titleZh = "系统调用时序异常",
+   240→            titleEn = "Syscall Timing Abnormal",
+   241→            descriptionZh = "检测到系统调用执行时序异常，可能存在系统调用 Hook（如 syscall table 被修改），用于拦截和隐藏 Root 相关操作。",
+   242→            descriptionEn = "Detected abnormal syscall execution timing. Syscall Hook may exist (e.g., syscall table modified) to intercept and hide Root-related operations.",
+   243→            stepsZh = listOf(
+   244→                "1. 系统调用时序检测通过测量特定系统调用的执行时间来判断是否存在 Hook",
+   245→                "2. 被 Hook 的系统调用执行时间通常明显长于正常值",
+   246→                "3. 检查系统调用表: 需要内核级访问权限",
+   247→                "4. 对比 /proc/kallsyms 中的系统调用地址与官方值",
+   248→                "5. 建议：此类型修改通常由内核级 Root 工具造成",
+   249→                "6. 刷入官方内核镜像是唯一的可靠修复方法",
+   250→                "7. 从官方 ROM 提取 boot.img 并通过 fastboot 刷入",
+   251→                "8. 如使用自定义内核，切换到官方内核",
+   252→                "9. 恢复后重新运行检测以验证修复效果"
+   253→            ),
+   254→            stepsEn = listOf(
+   255→                "1. Syscall timing detection measures execution time to detect Hooks",
+   256→                "2. Hooked syscalls typically take significantly longer than normal",
+   257→                "3. Check syscall table: requires kernel-level access",
+   258→                "4. Compare syscall addresses in /proc/kallsyms with official values",
+   259→                "5. Recommendation: This is usually caused by kernel-level Root tools",
+   260→                "6. Flashing official kernel image is the only reliable fix",
+   261→                "7. Extract boot.img from official ROM and flash via fastboot",
+   262→                "8. If using custom kernel, switch to official kernel",
+   263→                "9. Re-run detection after restore to verify fix"
+   264→            ),
+   265→            priority = 10
+   266→        ),
+   267→        "进程" to FixRecommendation(
+   268→            id = "processes",
+   269→            titleZh = "可疑进程",
+   270→            titleEn = "Suspicious Processes",
+   271→            descriptionZh = "检测到与 Root 工具相关的可疑进程正在运行，如 daemon 进程、su 进程等。",
+   272→            descriptionEn = "Detected suspicious processes related to Root tools running, such as daemon processes, su processes, etc.",
+   273→            stepsZh = listOf(
+   274→                "1. 查看所有运行进程: adb shell ps -A",
+   275→                "2. 搜索可疑进程名: 关注 su、magisk、daemon、supersu 等关键词",
+   276→                "3. 查看进程详情: adb shell cat /proc/<pid>/cmdline",
+   277→                "4. 建议：终止可疑 Root 进程",
+   278→                "5. 执行: adb shell kill -9 <pid>",
+   279→                "6. 检查进程的自启动配置: /data/adb/service.d/",
+   280→                "7. 删除可疑的自启动脚本",
+   281→                "8. 重启设备后检查进程是否再次出现",
+   282→                "9. 如反复出现，建议卸载相关 Root 工具或恢复出厂设置"
+   283→            ),
+   284→            stepsEn = listOf(
+   285→                "1. View all running processes: adb shell ps -A",
+   286→                "2. Search for suspicious process names: look for su, magisk, daemon, supersu",
+   287→                "3. View process details: adb shell cat /proc/<pid>/cmdline",
+   288→                "4. Recommendation: Terminate suspicious Root processes",
+   289→                "5. Run: adb shell kill -9 <pid>",
+   290→                "6. Check auto-start configs: /data/adb/service.d/",
+   291→                "7. Delete suspicious auto-start scripts",
+   292→                "8. Reboot and check if processes reappear",
+   293→                "9. If recurring, uninstall related Root tools or factory reset"
+   294→            ),
+   295→            priority = 7
+   296→        ),
+   297→        "自保护" to FixRecommendation(
+   298→            id = "self_protection",
+   299→            titleZh = "自保护机制异常",
+   300→            titleEn = "Self-Protection Mechanism Abnormal",
+   301→            descriptionZh = "检测到应用自保护机制异常，可能存在调试器附加、代码注入或 ptrace 攻击。",
+   302→            descriptionEn = "Detected app self-protection mechanism abnormality. Debugger attachment, code injection, or ptrace attacks may exist.",
+   303→            stepsZh = listOf(
+   304→                "1. 检查是否有调试器附加: adb shell cat /proc/self/status | grep TracerPid",
+   305→                "2. TracerPid 不为 0 表示有进程正在调试本应用",
+   306→                "3. 检查 /proc/self/maps 中是否有异常的共享库注入",
+   307→                "4. 查看是否有 Frida、Xposed 等注入框架运行",
+   308→                "5. 建议：关闭所有调试和注入工具",
+   309→                "6. 卸载 Frida Server: 检查 /data/local/tmp/ 目录",
+   310→                "7. 检查并卸载 Xposed/LSPosed 框架",
+   311→                "8. 重启设备以清除所有注入的库",
+   312→                "9. 如问题持续，建议恢复出厂设置"
+   313→            ),
+   314→            stepsEn = listOf(
+   315→                "1. Check for debugger attachment: adb shell cat /proc/self/status | grep TracerPid",
+   316→                "2. TracerPid non-zero means a process is debugging this app",
+   317→                "3. Check /proc/self/maps for abnormal shared library injection",
+   318→                "4. Check for injection frameworks like Frida, Xposed",
+   319→                "5. Recommendation: Disable all debugging and injection tools",
+   320→                "6. Uninstall Frida Server: check /data/local/tmp/ directory",
+   321→                "7. Check and uninstall Xposed/LSPosed framework",
+   322→                "8. Reboot to clear all injected libraries",
+   323→                "9. If issue persists, recommend factory reset"
+   324→            ),
+   325→            priority = 9
+   326→        ),
+   327→        "固件" to FixRecommendation(
+   328→            id = "firmware_partition",
+   329→            titleZh = "固件/分区完整性校验异常",
+   330→            titleEn = "Firmware/Partition Integrity Abnormal",
+   331→            descriptionZh = "检测到固件分区（Boot/Vendor/Recovery）或安全存储区域被篡改，可能存在 Magisk 修补、APatch 内核修改或第三方 Recovery 植入。",
+   332→            descriptionEn = "Detected firmware partition (Boot/Vendor/Recovery) or secure storage tampering. Possible Magisk patching, APatch kernel modification, or third-party Recovery injection.",
+   333→            stepsZh = listOf(
+   334→                "1. Boot 分区被修改（Magisk 间隙/APatch 内核）→ 刷入官方 boot.img",
+   335→                "2. 从官方固件包中提取 boot.img: fastboot flash boot boot.img",
+   336→                "3. Vendor 分区异常 → 刷入官方 vendor.img",
+   337→                "4. Third-party Recovery 检测 → 刷入官方 recovery.img",
+   338→                "5. TEE 安全存储异常 → 检查设备是否已解锁 Bootloader",
+   339→                "6. 不确定官方镜像时，建议完整线刷官方 ROM 包",
+   340→                "7. 重新锁回 Bootloader（谨慎操作）: fastboot oem lock",
+   341→                "8. 恢复后重新运行深度检测验证修复"
+   342→            ),
+   343→            stepsEn = listOf(
+   344→                "1. Boot partition modified (Magisk gap/APatch kernel) → flash official boot.img",
+   345→                "2. Extract boot.img from official firmware: fastboot flash boot boot.img",
+   346→                "3. Vendor partition abnormal → flash official vendor.img",
+   347→                "4. Third-party Recovery detected → flash official recovery.img",
+   348→                "5. TEE secure storage abnormal → check if Bootloader is unlocked",
+   349→                "6. When unsure, fully flash official ROM package",
+   350→                "7. Re-lock Bootloader (use with caution): fastboot oem lock",
+   351→                "8. Re-run deep detection after restore to verify fix"
+   352→            ),
+   353→            priority = 10
+   354→        ),
+   355→        "固件完整性" to FixRecommendation(
+   356→            id = "firmware_generic",
+   357→            titleZh = "固件完整性异常",
+   358→            titleEn = "Firmware Integrity Abnormal",
+   359→            descriptionZh = "检测到固件分区哈希与官方基线不一致，系统固件可能被篡改或替换。",
+   360→            descriptionEn = "Detected firmware partition hash mismatch with official baseline. System firmware may have been tampered or replaced.",
+   361→            stepsZh = listOf(
+   362→                "1. 记录异常分区的哈希值并与官方固件对比",
+   363→                "2. 从设备制造商官网获取官方固件包",
+   364→                "3. 通过 fastboot 模式刷入对应分区镜像",
+   365→                "4. 执行完整线刷以确保所有分区一致性",
+   366→                "5. 避免使用非官方的第三方 ROM 或修补版固件",
+   367→                "6. 恢复后重新运行深度检测以确认修复"
+   368→            ),
+   369→            stepsEn = listOf(
+   370→                "1. Record abnormal partition hash and compare with official firmware",
+   371→                "2. Obtain official firmware package from device manufacturer",
+   372→                "3. Flash corresponding partition image via fastboot mode",
+   373→                "4. Perform full firmware flash to ensure partition consistency",
+   374→                "5. Avoid using unofficial third-party ROMs or patched firmware",
+   375→                "6. Re-run deep detection after restore to confirm fix"
+   376→            ),
+   377→            priority = 9
+   378→        ),
+   379→        "Shamiko" to FixRecommendation(
+   380→            id = "shamiko",
+   381→            titleZh = "Shamiko 隐藏工具检测",
+   382→            titleEn = "Shamiko Hiding Tool Detected",
+   383→            descriptionZh = "检测到 Shamiko 行为特征。Shamiko 是 Zygisk 模块，用于隐藏 Root 状态。",
+   384→            descriptionEn = "Detected Shamiko behavior characteristics. Shamiko is a Zygisk module that hides Root status.",
+   385→            stepsZh = listOf(
+   386→                "1. 检查 /data/adb/modules 目录下是否存在 shamiko 模块",
+   387→                "2. 禁用或卸载 Shamiko 模块: Magisk → 模块 → 关闭 Shamiko",
+   388→                "3. 检查 /data/adb/shamiko/whitelist 白名单配置",
+   389→                "4. Shamiko 通过 sepolicy 覆写隐藏痕迹，需恢复官方 sepolicy",
+   390→                "5. 建议: 卸载 Shamiko 后重启设备",
+   391→                "6. 重启后重新运行检测以验证是否清除",
+   392→                "7. 如问题持续，可能是 Zygisk 残留，需刷入官方 boot.img"
+   393→            ),
+   394→            stepsEn = listOf(
+   395→                "1. Check /data/adb/modules for shamiko module",
+   396→                "2. Disable or uninstall Shamiko: Magisk → Modules → Disable Shamiko",
+   397→                "3. Check /data/adb/shamiko/whitelist for whitelist config",
+   398→                "4. Shamiko uses sepolicy override to hide traces, restore official sepolicy",
+   399→                "5. Recommendation: Uninstall Shamiko and reboot device",
+   400→                "6. Re-run detection after reboot to verify removal",
+   401→                "7. If issue persists, Zygisk residue may remain, flash official boot.img"
+   402→            ),
+   403→            priority = 10
+   404→        ),
+   405→        "ZygiskNext" to FixRecommendation(
+   406→            id = "zygisknext",
+   407→            titleZh = "ZygiskNext 隔离层检测",
+   408→            titleEn = "ZygiskNext Isolation Layer Detected",
+   409→            descriptionZh = "检测到 ZygiskNext 特征。ZygiskNext 是 Zygisk 的替代实现，通过内存隔离标记提供更强的隐蔽性。",
+   410→            descriptionEn = "Detected ZygiskNext characteristics. ZygiskNext is an alternative Zygisk implementation using memory isolation marks.",
+   411→            stepsZh = listOf(
+   412→                "1. 检查 /data/adb/modules 目录下是否存在 zygisknext 模块",
+   413→                "2. 检查 /data/adb/zygisknext 目录及其配置文件",
+   414→                "3. ZygiskNext 使用 memfd 私有通道加载模块，需重新打包 boot.img",
+   415→                "4. 建议: 在 Magisk 管理中关闭 ZygiskNext 模块",
+   416→                "5. 卸载后需重启设备以清除内存中的隔离标记",
+   417→                "6. 检查 /proc/self/maps 有无 zygisknext 残留映射",
+   418→                "7. 如手动清除困难，建议刷入官方 boot.img"
+   419→            ),
+   420→            stepsEn = listOf(
+   421→                "1. Check /data/adb/modules for zygisknext module",
+   422→                "2. Check /data/adb/zygisknext directory and config files",
+   423→                "3. ZygiskNext uses memfd private channels, may need boot.img repack",
+   424→                "4. Recommendation: Disable ZygiskNext module in Magisk Manager",
+   425→                "5. Reboot device after removal to clear memory isolation marks",
+   426→                "6. Check /proc/self/maps for zygisknext residual mappings",
+   427→                "7. If difficult to remove manually, flash official boot.img"
+   428→            ),
+   429→            priority = 10
+   430→        ),
+   431→        "APatch KPM" to FixRecommendation(
+   432→            id = "apatch_kpm",
+   433→            titleZh = "APatch KPM 内核补丁检测",
+   434→            titleEn = "APatch KPM Kernel Patch Detected",
+   435→            descriptionZh = "检测到 APatch KPM（Kernel Patch Module）内核补丁。",
+   436→            descriptionEn = "Detected APatch KPM (Kernel Patch Module). APatch patches the kernel via KPM modules.",
+   437→            stepsZh = listOf(
+   438→                "1. 检查 /sys/kpm/ 目录是否存在 KPM 模块节点",
+   439→                "2. APatch 的 truncate 后门通过特定参数值触发内核代码执行",
+   440→                "3. 建议: 使用 APatch 官方卸载工具移除",
+   441→                "4. 检查 kallsyms 是否被擦除: cat /proc/kallsyms | grep kallsyms_lookup_name",
+   442→                "5. 恢复方法: 刷入官方 boot.img（需确保不含 APatch 补丁）",
+   443→                "6. 执行 fastboot flash boot boot.img",
+   444→                "7. 重启后验证 /sys/kpm/ 节点是否消失",
+   445→                "8. 如无法清除，建议完整线刷官方 ROM"
+   446→            ),
+   447→            stepsEn = listOf(
+   448→                "1. Check /sys/kpm/ for KPM module nodes",
+   449→                "2. APatch truncate backdoor triggers kernel code via specific parameter values",
+   450→                "3. Recommendation: Use APatch official uninstaller",
+   451→                "4. Check kallsyms erasure: cat /proc/kallsyms | grep kallsyms_lookup_name",
+   452→                "5. Restore by flashing official boot.img (ensure APatch-free)",
+   453→                "6. Run fastboot flash boot boot.img",
+   454→                "7. Reboot and verify /sys/kpm/ node is gone",
+   455→                "8. If cannot remove, full flash official ROM"
+   456→            ),
+   457→            priority = 10
+   458→        ),
+   459→        "KernelSU" to FixRecommendation(
+   460→            id = "kernelsu_overlay",
+   461→            titleZh = "KernelSU overlayfs 伪装检测",
+   462→            titleEn = "KernelSU overlayfs Masquerading Detected",
+   463→            descriptionZh = "检测到 KernelSU 通过 overlayfs 伪装系统分区。",
+   464→            descriptionEn = "Detected KernelSU overlayfs masquerading on system partitions.",
+   465→            stepsZh = listOf(
+   466→                "1. 检查 /data/adb/ksu 目录是否存在 KernelSU 相关文件",
+   467→                "2. 检查 overlay 挂载中是否包含 ksu 关键词",
+   468→                "3. KernelSU 使用 overlay 镜像文件（/data/adb/modules/*/img）",
+   469→                "4. 建议: 使用 KernelSU 管理器卸载 Root",
+   470→                "5. 在 KernelSU 管理中关闭所有模块",
+   471→                "6. 执行 KernelSU 完全卸载（官方卸载脚本）",
+   472→                "7. 检查 /proc/self/mountinfo 中的 overlay 条目",
+   473→                "8. 恢复官方 boot.img 以确保内核 overlay 未被劫持"
+   474→            ),
+   475→            stepsEn = listOf(
+   476→                "1. Check /data/adb/ksu for KernelSU related files",
+   477→                "2. Check overlay mounts for ksu keywords",
+   478→                "3. KernelSU uses overlay image files (/data/adb/modules/*/img)",
+   479→                "4. Recommendation: Uninstall Root via KernelSU Manager",
+   480→                "5. Disable all modules in KernelSU Manager",
+   481→                "6. Run KernelSU complete uninstall (official script)",
+   482→                "7. Check overlay entries in /proc/self/mountinfo",
+   483→                "8. Restore official boot.img to prevent kernel overlay hijacking"
+   484→            ),
+   485→            priority = 10
+   486→        ),
+   487→        "LSPosed" to FixRecommendation(
+   488→            id = "lsposed",
+   489→            titleZh = "LSPosed/Riru 框架检测",
+   490→            titleEn = "LSPosed/Riru Framework Detected",
+   491→            descriptionZh = "检测到 LSPosed（旧版 Riru 或新版 Zygisk 模式）框架。",
+   492→            descriptionEn = "Detected LSPosed framework (legacy Riru or new Zygisk mode).",
+   493→            stepsZh = listOf(
+   494→                "1. 检查 /data/adb/lspd 目录是否存在 LSPosed 配置文件",
+   495→                "2. 检查 /data/adb/modules 中 lsposed 模块",
+   496→                "3. 区分 Riru 模式（旧版）与 Zygisk 模式（新版）",
+   497→                "4. 旧版 Riru: 检查 libriru_* 库是否在内存映射中",
+   498→                "5. 新版: 在 Magisk 管理中关闭 LSPosed 模块",
+   499→                "6. 检查 /proc/self/maps 中 liblspd.so 和 binder 通道",
+   500→                "7. 建议: 在 LSPosed 管理器中卸载所有模块",
+   501→                "8. 在 Magisk 中禁用/卸载 LSPosed 模块后重启"
+   502→            ),
+   503→            stepsEn = listOf(
+   504→                "1. Check /data/adb/lspd for LSPosed config files",
+   505→                "2. Check /data/adb/modules for lsposed module",
+   506→                "3. Distinguish Riru mode (legacy) from Zygisk mode (new)",
+   507→                "4. Legacy Riru: check libriru_* libraries in memory maps",
+   508→                "5. New Zygisk mode: disable LSPosed module in Magisk Manager",
+   509→                "6. Check /proc/self/maps for liblspd.so and binder channels",
+   510→                "7. Recommendation: Uninstall all modules in LSPosed Manager",
+   511→                "8. Disable/uninstall LSPosed module in Magisk and reboot"
+   512→            ),
+   513→            priority = 9
+   514→        )
+   515→    )
+   516→
+   517→    fun getRecommendation(layer: String): FixRecommendation? {
+   518→        // Sort keys by length descending to match most specific first
+   519→        // This prevents "固件" matching before "固件完整性"
+   520→        val sortedKeys = recommendations.keys.sortedByDescending { it.length }
+   521→        val matchedKey = sortedKeys.firstOrNull { key ->
+   522→            when (key) {
+   523→                "系统调用时序" -> layer == "系统调用时序" || layer == "系统调用"
+   524→                "APatch KPM" -> layer.contains("APatch") && layer.contains("KPM")
+   525→                "固件完整性" -> layer.contains("固件") && (layer.contains("完整") || layer.contains("分区"))
+   526→                else -> layer == key || (layer.contains(key) && key.length >= 2)
+   527→            }
+   528→        }
+   529→        return matchedKey?.let { recommendations[it] }
+   530→    }
+   531→
+   532→    fun getAllRecommendations(): Collection<FixRecommendation> {
+   533→        return recommendations.values
+   534→    }
+   535→
+   536→    fun getRecommendationsForLayers(layers: List<String>): List<FixRecommendation> {
+   537→        return layers.mapNotNull { getRecommendation(it) }
+   538→            .sortedByDescending { it.priority }
+   539→            .distinctBy { it.id }
+   540→    }
+   541→}

@@ -1,0 +1,1143 @@
+     1→     1→package com.apex.root.viewmodel
+     2→     2→
+     3→     3→import android.app.Application
+     4→     4→import androidx.lifecycle.AndroidViewModel
+     5→     5→import androidx.lifecycle.viewModelScope
+     6→     6→import com.apex.root.data.*
+     7→     7→import com.apex.root.data.jni.NativeBridge
+     8→     8→import kotlinx.coroutines.Dispatchers
+     9→     9→import kotlinx.coroutines.flow.MutableStateFlow
+    10→    10→import kotlinx.coroutines.flow.StateFlow
+    11→    11→import kotlinx.coroutines.flow.asStateFlow
+    12→    12→import kotlinx.coroutines.launch
+    13→    13→import kotlinx.coroutines.withContext
+    14→    14→
+    15→    15→class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+    16→    16→    private val repository = SettingsRepository(application)
+    17→    17→
+    18→    18→    private val _settings = MutableStateFlow(repository.load())
+    19→    19→    val settings: StateFlow<AppSettings> = _settings.asStateFlow()
+    20→    20→
+    21→    21→    // ── Detection ──
+    22→    22→
+    23→    23→    fun updateDetectionLevel(level: DetectionLevel) {
+    24→    24→        _settings.value = _settings.value.copy(detectionLevel = level); persist()
+    25→    25→    }
+    26→    26→
+    27→    27→    fun updateAutoScan(enabled: Boolean) {
+    28→    28→        _settings.value = _settings.value.copy(autoScanEnabled = enabled); persist()
+    29→    29→    }
+    30→    30→
+    31→    31→    fun updateAutoScanInterval(interval: AutoScanInterval) {
+    32→    32→        _settings.value = _settings.value.copy(autoScanInterval = interval); persist()
+    33→    33→    }
+    34→    34→
+    35→    35→    fun updateRiskNotification(enabled: Boolean) {
+    36→    36→        _settings.value = _settings.value.copy(riskNotificationEnabled = enabled); persist()
+    37→    37→    }
+    38→    38→
+    39→    39→    fun updateRiskThreshold(threshold: Int) {
+    40→    40→        _settings.value = _settings.value.copy(riskThreshold = threshold.coerceIn(0, 100)); persist()
+    41→    41→    }
+    42→    42→
+    43→    43→    fun updatePluginEnabled(index: Int, enabled: Boolean) {
+    44→    44→        _settings.value = when (index) {
+    45→    45→            1 -> _settings.value.copy(pluginL1Enabled = enabled)
+    46→    46→            2 -> _settings.value.copy(pluginL2Enabled = enabled)
+    47→    47→            3 -> _settings.value.copy(pluginL3Enabled = enabled)
+    48→    48→            4 -> _settings.value.copy(pluginL4Enabled = enabled)
+    49→    49→            5 -> _settings.value.copy(pluginL5Enabled = enabled)
+    50→    50→            6 -> _settings.value.copy(pluginL6Enabled = enabled)
+    51→    51→            7 -> _settings.value.copy(pluginL7Enabled = enabled)
+    52→    52→            else -> _settings.value
+    53→    53→        }; persist()
+    54→    54→    }
+    55→    55→
+    56→    56→    // ── Guard ──
+    57→    57→
+    58→    58→    fun updateGuardEnabled(enabled: Boolean) {
+    59→    59→        _settings.value = _settings.value.copy(guardEnabled = enabled); persist()
+    60→    60→    }
+    61→    61→
+    62→    62→    fun updateGuardLevel(level: GuardLevel) {
+    63→    63→        _settings.value = _settings.value.copy(guardLevel = level); persist()
+    64→    64→    }
+    65→    65→
+    66→    66→    fun updateGuardSelfCheckInterval(seconds: Int) {
+    67→    67→        _settings.value = _settings.value.copy(guardSelfCheckInterval = seconds.coerceIn(1, 30)); persist()
+    68→    68→    }
+    69→    69→
+    70→    70→    fun updateGuardAntiDebug(enabled: Boolean) {
+    71→    71→        _settings.value = _settings.value.copy(guardAntiDebug = enabled); persist()
+    72→    72→    }
+    73→    73→
+    74→    74→    fun updateGuardAutoRecovery(enabled: Boolean) {
+    75→    75→        _settings.value = _settings.value.copy(guardAutoRecovery = enabled); persist()
+    76→    76→    }
+    77→    77→
+    78→    78→    // ── Hide / Spoof ──
+    79→    79→
+    80→    80→    /**
+    81→    81→     * 隐藏策略切换：UNIDIRECTIONAL / FULL / TARGETED
+    82→    82→     * 接线：调用 NativeBridge.enableHideMode(appUid) 真正激活 native 层隐藏。
+    83→    83→     * UNIDIRECTIONAL → 启用 Hide 模式
+    84→    84→     * FULL → 启用 Game 模式（aggressive 隐藏）
+    85→    85→     * TARGETED → 关闭 native 隐藏（仅依赖检测层）
+    86→    86→     */
+    87→    87→    fun updateHideStrategy(strategy: HideStrategy) {
+    88→    88→        _settings.value = _settings.value.copy(hideStrategy = strategy); persist()
+    89→    89→        // 接线 native 层
+    90→    90→        viewModelScope.launch(Dispatchers.IO) {
+    91→    91→            val appUid = getApplication<Application>().applicationInfo.uid
+    92→    92→            when (strategy) {
+    93→    93→                HideStrategy.UNIDIRECTIONAL -> { NativeBridge.enableHideMode(appUid) }
+    94→    94→                HideStrategy.FULL -> { NativeBridge.enableGameMode(appUid) }
+    95→    95→                HideStrategy.TARGETED -> { NativeBridge.disableHideMode() }
+    96→    96→            }
+    97→    97→        }
+    98→    98→    }
+    99→    99→
+   100→   100→    fun updateHwidSpoof(enabled: Boolean) {
+   101→   101→        _settings.value = _settings.value.copy(hwidSpoofEnabled = enabled); persist()
+   102→   102→        // 接线：HWID 伪装由 NativeHwid.spoofAll / restoreReal 控制
+   103→   103→        viewModelScope.launch(Dispatchers.IO) {
+   104→   104→            if (enabled) {
+   105→   105→                com.apex.root.hid.NativeHwid.spoofAll()
+   106→   106→            } else {
+   107→   107→                com.apex.root.hid.NativeHwid.restoreReal()
+   108→   108→            }
+   109→   109→        }
+   110→   110→    }
+   111→   111→
+   112→   112→    fun updateBootloaderSpoof(enabled: Boolean) {
+   113→   113→        _settings.value = _settings.value.copy(bootloaderSpoofEnabled = enabled); persist()
+   114→   114→        // Bootloader 伪装需要 root + resetprop，由 native 层处理
+   115→   115→        // TODO: 接入 NativeBridge.bootloaderSpoof (待实现)
+   116→   116→    }
+   117→   117→
+   118→   118→    // ── Game Mode ──
+   119→   119→
+   120→   120→    /**
+   121→   121→     * 游戏模式开关
+   122→   122→     * 接线：调用 NativeBridge.enableGameMode / disableHideMode
+   123→   123→     */
+   124→   124→    fun updateGameMode(enabled: Boolean) {
+   125→   125→        _settings.value = _settings.value.copy(gameModeEnabled = enabled); persist()
+   126→   126→        viewModelScope.launch(Dispatchers.IO) {
+   127→   127→            val appUid = getApplication<Application>().applicationInfo.uid
+   128→   128→            if (enabled) {
+   129→   129→                NativeBridge.enableGameMode(appUid)
+   130→   130→            } else {
+   131→   131→                NativeBridge.disableHideMode()
+   132→   132→            }
+   133→   133→        }
+   134→   134→    }
+   135→   135→
+   136→   136→    fun updateGameModeAggressive(enabled: Boolean) {
+   137→   137→        _settings.value = _settings.value.copy(gameModeAggressive = enabled); persist()
+   138→   138→        // aggressive 模式：重新启用 game mode 以应用更激进的隐藏
+   139→   139→        if (_settings.value.gameModeEnabled) {
+   140→   140→            viewModelScope.launch(Dispatchers.IO) {
+   141→   141→                val appUid = getApplication<Application>().applicationInfo.uid
+   142→   142→                NativeBridge.enableGameMode(appUid)
+   143→   143→            }
+   144→   144→        }
+   145→   145→    }
+   146→   146→
+   147→   147→    // ── Sandbox ──
+   148→   148→
+   149→   149→    fun updateSandboxAutoCreate(enabled: Boolean) {
+   150→   150→        _settings.value = _settings.value.copy(sandboxAutoCreate = enabled); persist()
+   151→   151→    }
+   152→   152→
+   153→   153→    fun updateSandboxCleanupOnExit(enabled: Boolean) {
+   154→   154→        _settings.value = _settings.value.copy(sandboxCleanupOnExit = enabled); persist()
+   155→   155→    }
+   156→   156→
+   157→   157→    // ── Cure ──
+   158→   158→
+   159→   159→    fun updateCureDefaultLevel(level: Int) {
+   160→   160→        _settings.value = _settings.value.copy(cureDefaultLevel = level.coerceIn(0, 3)); persist()
+   161→   161→    }
+   162→   162→
+   163→   163→    fun updateCureAutoFix(enabled: Boolean) {
+   164→   164→        _settings.value = _settings.value.copy(cureAutoFix = enabled); persist()
+   165→   165→    }
+   166→   166→
+   167→   167→    // ── Appearance ──
+   168→   168→
+   169→   169→    fun updateThemeMode(mode: ThemeMode) {
+   170→   170→        _settings.value = _settings.value.copy(themeMode = mode); persist()
+   171→   171→    }
+   172→   172→
+   173→   173→    fun updateAccentColor(color: AccentColor) {
+   174→   174→        _settings.value = _settings.value.copy(accentColor = color); persist()
+   175→   175→    }
+   176→   176→
+   177→   177→    fun updateAnimations(enabled: Boolean) {
+   178→   178→        _settings.value = _settings.value.copy(animationsEnabled = enabled); persist()
+   179→   179→    }
+   180→   180→
+   181→   181→    fun updateLiquidGlassEffect(enabled: Boolean) {
+   182→   182→        _settings.value = _settings.value.copy(liquidGlassEffect = enabled); persist()
+   183→   183→    }
+   184→   184→
+   185→   185→    // ── Network & Firewall ──
+   186→   186→
+   187→   187→    fun updateEbpfFirewall(enabled: Boolean) {
+   188→   188→        _settings.value = _settings.value.copy(ebpfFirewallEnabled = enabled); persist()
+   189→   189→    }
+   190→   190→
+   191→   191→    fun updateFirewallLogging(enabled: Boolean) {
+   192→   192→        _settings.value = _settings.value.copy(firewallLogging = enabled); persist()
+   193→   193→    }
+   194→   194→
+   195→   195→    fun updateUpdateProxy(proxy: String) {
+   196→   196→        _settings.value = _settings.value.copy(updateProxy = proxy); persist()
+   197→   197→    }
+   198→   198→
+   199→   199→    // ── Notifications ──
+   200→   200→
+   201→   201→    fun updateNotifyScanComplete(enabled: Boolean) {
+   202→   202→        _settings.value = _settings.value.copy(notifyScanComplete = enabled); persist()
+   203→   203→    }
+   204→   204→
+   205→   205→    fun updateNotifyRiskFound(enabled: Boolean) {
+   206→   206→        _settings.value = _settings.value.copy(notifyRiskFound = enabled); persist()
+   207→   207→    }
+   208→   208→
+   209→   209→    fun updateNotifyGuardAlert(enabled: Boolean) {
+   210→   210→        _settings.value = _settings.value.copy(notifyGuardAlert = enabled); persist()
+   211→   211→    }
+   212→   212→
+   213→   213→    fun updateNotifyCureResult(enabled: Boolean) {
+   214→   214→        _settings.value = _settings.value.copy(notifyCureResult = enabled); persist()
+   215→   215→    }
+   216→   216→
+   217→   217→    fun updateNotifyUpdateAvailable(enabled: Boolean) {
+   218→   218→        _settings.value = _settings.value.copy(notifyUpdateAvailable = enabled); persist()
+   219→   219→    }
+   220→   220→
+   221→   221→    // ── Privacy ──
+   222→   222→
+   223→   223→    fun updateTelemetry(enabled: Boolean) {
+   224→   224→        _settings.value = _settings.value.copy(telemetryEnabled = enabled); persist()
+   225→   225→    }
+   226→   226→
+   227→   227→    fun updateCrashReports(enabled: Boolean) {
+   228→   228→        _settings.value = _settings.value.copy(crashReportsEnabled = enabled); persist()
+   229→   229→    }
+   230→   230→
+   231→   231→    // ── Updates ──
+   232→   232→
+   233→   233→    fun updateAutoCheckUpdates(enabled: Boolean) {
+   234→   234→        _settings.value = _settings.value.copy(autoCheckUpdates = enabled); persist()
+   235→   235→    }
+   236→   236→
+   237→   237→    fun updateUpdateChannel(channel: UpdateChannel) {
+   238→   238→        _settings.value = _settings.value.copy(updateChannel = channel); persist()
+   239→   239→    }
+   240→   240→
+   241→   241→    fun updateWifiOnlyUpdate(enabled: Boolean) {
+   242→   242→        _settings.value = _settings.value.copy(wifiOnlyUpdate = enabled); persist()
+   243→   243→    }
+   244→   244→
+   245→   245→    // ── Performance ──
+   246→   246→
+   247→   247→    fun updateScanConcurrency(count: Int) {
+   248→   248→        _settings.value = _settings.value.copy(scanConcurrency = count.coerceIn(1, 8)); persist()
+   249→   249→    }
+   250→   250→
+   251→   251→    fun updateCacheMaxAge(minutes: Int) {
+   252→   252→        _settings.value = _settings.value.copy(cacheMaxAgeMinutes = minutes.coerceIn(1, 1440)); persist()
+   253→   253→    }
+   254→   254→
+   255→   255→    fun updateLowMemoryMode(enabled: Boolean) {
+   256→   256→        _settings.value = _settings.value.copy(lowMemoryMode = enabled); persist()
+   257→   257→    }
+   258→   258→
+   259→   259→    // ── Logging ──
+   260→   260→
+   261→   261→    fun updateLogLevel(level: LogLevel) {
+   262→   262→        _settings.value = _settings.value.copy(logLevel = level); persist()
+   263→   263→    }
+   264→   264→
+   265→   265→    fun updateLogMaxFiles(count: Int) {
+   266→   266→        _settings.value = _settings.value.copy(logMaxFiles = count.coerceIn(1, 50)); persist()
+   267→   267→    }
+   268→   268→
+   269→   269→    fun updateLogAutoCleanup(enabled: Boolean) {
+   270→   270→        _settings.value = _settings.value.copy(logAutoCleanup = enabled); persist()
+   271→   271→    }
+   272→   272→
+   273→   273→    // ── Scheduling ──
+   274→   274→
+   275→   275→    fun updateScheduleTime(time: ScanScheduleTime) {
+   276→   276→        _settings.value = _settings.value.copy(scheduleTime = time); persist()
+   277→   277→    }
+   278→   278→
+   279→   279→    // ── Language ──
+   280→   280→
+   281→   281→    fun updateLanguage(lang: Language) {
+   282→   282→        _settings.value = _settings.value.copy(language = lang); persist()
+   283→   283→    }
+   284→   284→
+   285→   285→    // ── Advanced ──
+   286→   286→
+   287→   287→    fun updateExperimentalFeatures(enabled: Boolean) {
+   288→   288→        _settings.value = _settings.value.copy(experimentalFeatures = enabled); persist()
+   289→   289→    }
+   290→   290→
+   291→   291→    // ── Power ──
+   292→   292→
+   293→   293→    fun updatePowerProfile(profile: PowerProfile) {
+   294→   294→        _settings.value = _settings.value.copy(powerProfile = profile); persist()
+   295→   295→    }
+   296→   296→
+   297→   297→    fun updateBatterySaver(enabled: Boolean) {
+   298→   298→        _settings.value = _settings.value.copy(batterySaverEnabled = enabled); persist()
+   299→   299→    }
+   300→   300→
+   301→   301→    // ── IPC ──
+   302→   302→
+   303→   303→    fun updateIpcTimeout(seconds: Int) {
+   304→   304→        _settings.value = _settings.value.copy(ipcTimeoutSeconds = seconds.coerceIn(1, 60)); persist()
+   305→   305→    }
+   306→   306→
+   307→   307→    fun updateIpcRetryCount(count: Int) {
+   308→   308→        _settings.value = _settings.value.copy(ipcRetryCount = count.coerceIn(0, 20)); persist()
+   309→   309→    }
+   310→   310→
+   311→   311→    fun updateIpcSocketPath(path: String) {
+   312→   312→        _settings.value = _settings.value.copy(ipcSocketPath = path); persist()
+   313→   313→    }
+   314→   314→
+   315→   315→    // ── Watchdog ──
+   316→   316→
+   317→   317→    fun updateWatchdogEnabled(enabled: Boolean) {
+   318→   318→        _settings.value = _settings.value.copy(watchdogEnabled = enabled); persist()
+   319→   319→    }
+   320→   320→
+   321→   321→    fun updateWatchdogInterval(seconds: Int) {
+   322→   322→        _settings.value = _settings.value.copy(watchdogIntervalSeconds = seconds.coerceIn(5, 300)); persist()
+   323→   323→    }
+   324→   324→
+   325→   325→    fun updateWatchdogAutoRestart(enabled: Boolean) {
+   326→   326→        _settings.value = _settings.value.copy(watchdogAutoRestart = enabled); persist()
+   327→   327→    }
+   328→   328→
+   329→   329→    // ── Anti-detection ──
+   330→   330→
+   331→   331→    fun updateObfuscationLevel(level: ObfuscationLevel) {
+   332→   332→        _settings.value = _settings.value.copy(obfuscationLevel = level); persist()
+   333→   333→    }
+   334→   334→
+   335→   335→    fun updateCpuRandomAffinity(enabled: Boolean) {
+   336→   336→        _settings.value = _settings.value.copy(cpuRandomAffinity = enabled); persist()
+   337→   337→    }
+   338→   338→
+   339→   339→    // ── Whitelist & Exclusions ──
+   340→   340→
+   341→   341→    fun updateWhitelistApps(list: String) {
+   342→   342→        _settings.value = _settings.value.copy(whitelistApps = list); persist()
+   343→   343→    }
+   344→   344→
+   345→   345→    fun updateScanExclusions(list: String) {
+   346→   346→        _settings.value = _settings.value.copy(scanExclusions = list); persist()
+   347→   347→    }
+   348→   348→
+   349→   349→    fun updateCustomDetectionKeywords(keywords: String) {
+   350→   350→        _settings.value = _settings.value.copy(customDetectionKeywords = keywords); persist()
+   351→   351→    }
+   352→   352→
+   353→   353→    fun updateCustomHidePaths(paths: String) {
+   354→   354→        _settings.value = _settings.value.copy(customHidePaths = paths); persist()
+   355→   355→    }
+   356→   356→
+   357→   357→    // ── Hardening ──
+   358→   358→
+   359→   359→    fun updateVerifyBoot(enabled: Boolean) {
+   360→   360→        _settings.value = _settings.value.copy(verifyBootEnabled = enabled); persist()
+   361→   361→    }
+   362→   362→
+   363→   363→    fun updateKeystoreCheck(enabled: Boolean) {
+   364→   364→        _settings.value = _settings.value.copy(keystoreCheckEnabled = enabled); persist()
+   365→   365→    }
+   366→   366→
+   367→   367→    fun updateSelinuxEnforceCheck(enabled: Boolean) {
+   368→   368→        _settings.value = _settings.value.copy(selinuxEnforceCheck = enabled); persist()
+   369→   369→    }
+   370→   370→
+   371→   371→    // ── Profile ──
+   372→   372→
+   373→   373→    fun updateCurrentProfile(name: String) {
+   374→   374→        _settings.value = _settings.value.copy(currentProfile = name); persist()
+   375→   375→    }
+   376→   376→
+   377→   377→    // ── Stealth ──
+   378→   378→
+   379→   379→    fun updateStealthHideIcon(enabled: Boolean) {
+   380→   380→        _settings.value = _settings.value.copy(stealthHideIcon = enabled); persist()
+   381→   381→    }
+   382→   382→
+   383→   383→    fun updateStealthHideRecent(enabled: Boolean) {
+   384→   384→        _settings.value = _settings.value.copy(stealthHideRecent = enabled); persist()
+   385→   385→    }
+   386→   386→
+   387→   387→    fun updateStealthHideNotification(enabled: Boolean) {
+   388→   388→        _settings.value = _settings.value.copy(stealthHideNotification = enabled); persist()
+   389→   389→    }
+   390→   390→
+   391→   391→    fun updateStealthFakeAppName(name: String) {
+   392→   392→        _settings.value = _settings.value.copy(stealthFakeAppName = name); persist()
+   393→   393→    }
+   394→   394→
+   395→   395→    // ── Emergency ──
+   396→   396→
+   397→   397→    fun updateEmergencyLockDevice(enabled: Boolean) {
+   398→   398→        _settings.value = _settings.value.copy(emergencyLockDevice = enabled); persist()
+   399→   399→    }
+   400→   400→
+   401→   401→    fun updateEmergencyWipeData(enabled: Boolean) {
+   402→   402→        _settings.value = _settings.value.copy(emergencyWipeData = enabled); persist()
+   403→   403→    }
+   404→   404→
+   405→   405→    fun updateEmergencyShutdown(enabled: Boolean) {
+   406→   406→        _settings.value = _settings.value.copy(emergencyShutdown = enabled); persist()
+   407→   407→    }
+   408→   408→
+   409→   409→    fun updateEmergencyNotifyContacts(enabled: Boolean) {
+   410→   410→        _settings.value = _settings.value.copy(emergencyNotifyContacts = enabled); persist()
+   411→   411→    }
+   412→   412→
+   413→   413→    // ── Side-channel Spoof ──
+   414→   414→    // 这些 spoof 由 ctrl/ 下的 C 函数实现（apex_pmu_spoof.c / apex_timing_spoof.c / apex_mem_spoof.c）
+   415→   415→    // 当前通过 enableHideMode 间接激活；独立 JNI 接口待后续实现。
+   416→   416→    // 启用任一 spoof 时，自动激活 Hide 模式以确保 spoof 生效。
+   417→   417→
+   418→   418→    fun updatePmuSpoof(enabled: Boolean) {
+   419→   419→        _settings.value = _settings.value.copy(pmuSpoofEnabled = enabled); persist()
+   420→   420→        // PMU spoof 在 Hide 模式下由 apex_pmu_spoof.c::apex_pmu_spoof_read 提供
+   421→   421→        if (enabled && !NativeBridge.isHideModeActive()) {
+   422→   422→            viewModelScope.launch(Dispatchers.IO) {
+   423→   423→                val appUid = getApplication<Application>().applicationInfo.uid
+   424→   424→                NativeBridge.enableHideMode(appUid)
+   425→   425→            }
+   426→   426→        }
+   427→   427→    }
+   428→   428→
+   429→   429→    fun updateTimingSpoof(enabled: Boolean) {
+   430→   430→        _settings.value = _settings.value.copy(timingSpoofEnabled = enabled); persist()
+   431→   431→        // Timing spoof 由 apex_timing_spoof.c::apex_timing_adjust_clock 提供
+   432→   432→        if (enabled && !NativeBridge.isHideModeActive()) {
+   433→   433→            viewModelScope.launch(Dispatchers.IO) {
+   434→   434→                val appUid = getApplication<Application>().applicationInfo.uid
+   435→   435→                NativeBridge.enableHideMode(appUid)
+   436→   436→            }
+   437→   437→        }
+   438→   438→    }
+   439→   439→
+   440→   440→    fun updateMemorySpoof(enabled: Boolean) {
+   441→   441→        _settings.value = _settings.value.copy(memorySpoofEnabled = enabled); persist()
+   442→   442→        // Memory spoof 由 apex_mem_spoof.c::apex_mem_spoof_read 提供
+   443→   443→        if (enabled && !NativeBridge.isHideModeActive()) {
+   444→   444→            viewModelScope.launch(Dispatchers.IO) {
+   445→   445→                val appUid = getApplication<Application>().applicationInfo.uid
+   446→   446→                NativeBridge.enableHideMode(appUid)
+   447→   447→            }
+   448→   448→        }
+   449→   449→    }
+   450→   450→
+   451→   451→    // ── Sound & Haptic ──
+   452→   452→
+   453→   453→    fun updateSoundScanComplete(enabled: Boolean) {
+   454→   454→        _settings.value = _settings.value.copy(soundScanComplete = enabled); persist()
+   455→   455→    }
+   456→   456→
+   457→   457→    fun updateSoundRiskAlert(enabled: Boolean) {
+   458→   458→        _settings.value = _settings.value.copy(soundRiskAlert = enabled); persist()
+   459→   459→    }
+   460→   460→
+   461→   461→    fun updateSoundGuardAlert(enabled: Boolean) {
+   462→   462→        _settings.value = _settings.value.copy(soundGuardAlert = enabled); persist()
+   463→   463→    }
+   464→   464→
+   465→   465→    fun updateHapticFeedback(enabled: Boolean) {
+   466→   466→        _settings.value = _settings.value.copy(hapticFeedback = enabled); persist()
+   467→   467→    }
+   468→   468→
+   469→   469→    // ── App Lock ──
+   470→   470→
+   471→   471→    fun updateAppLockEnabled(enabled: Boolean) {
+   472→   472→        _settings.value = _settings.value.copy(appLockEnabled = enabled); persist()
+   473→   473→    }
+   474→   474→
+   475→   475→    fun updateAppLockPin(pin: String) {
+   476→   476→        _settings.value = _settings.value.copy(appLockPin = pin); persist()
+   477→   477→    }
+   478→   478→
+   479→   479→    fun updateAppLockBiometric(enabled: Boolean) {
+   480→   480→        _settings.value = _settings.value.copy(appLockBiometric = enabled); persist()
+   481→   481→    }
+   482→   482→
+   483→   483→    // ── Export ──
+   484→   484→
+   485→   485→    fun updateAutoExport(enabled: Boolean) {
+   486→   486→        _settings.value = _settings.value.copy(autoExportEnabled = enabled); persist()
+   487→   487→    }
+   488→   488→
+   489→   489→    fun updateExportFormat(format: String) {
+   490→   490→        _settings.value = _settings.value.copy(exportFormat = format); persist()
+   491→   491→    }
+   492→   492→
+   493→   493→    // ── Crypto ──
+   494→   494→
+   495→   495→    fun updateCustomEncryptionKey(key: String) {
+   496→   496→        _settings.value = _settings.value.copy(customEncryptionKey = key); persist()
+   497→   497→    }
+   498→   498→
+   499→   499→    fun updateKeyRotationHours(hours: Int) {
+   500→   500→        _settings.value = _settings.value.copy(keyRotationHours = hours.coerceIn(1, 8760)); persist()
+   501→   501→    }
+   502→   502→
+   503→   503→    // ── Network Monitor ──
+   504→   504→
+   505→   505→    fun updateNetworkDnsMonitor(enabled: Boolean) {
+   506→   506→        _settings.value = _settings.value.copy(networkDnsMonitor = enabled); persist()
+   507→   507→    }
+   508→   508→
+   509→   509→    fun updateNetworkTrafficMonitor(enabled: Boolean) {
+   510→   510→        _settings.value = _settings.value.copy(networkTrafficMonitor = enabled); persist()
+   511→   511→    }
+   512→   512→
+   513→   513→    // ── Kernel ──
+   514→   514→
+   515→   515→    fun updateKernelModuleCheck(enabled: Boolean) {
+   516→   516→        _settings.value = _settings.value.copy(kernelModuleCheckEnabled = enabled); persist()
+   517→   517→    }
+   518→   518→
+   519→   519→    fun updateAutoSilenceOnGame(enabled: Boolean) {
+   520→   520→        _settings.value = _settings.value.copy(autoSilenceOnGame = enabled); persist()
+   521→   521→    }
+   522→   522→
+   523→   523→    // ── Quick Actions ──
+   524→   524→
+   525→   525→    fun updateQuickScanToggle(enabled: Boolean) {
+   526→   526→        _settings.value = _settings.value.copy(quickScanToggle = enabled); persist()
+   527→   527→    }
+   528→   528→
+   529→   529→    fun updateFloatingWidget(enabled: Boolean) {
+   530→   530→        _settings.value = _settings.value.copy(floatingWidget = enabled); persist()
+   531→   531→    }
+   532→   532→
+   533→   533→    fun updateGestureShortcut(enabled: Boolean) {
+   534→   534→        _settings.value = _settings.value.copy(gestureShortcut = enabled); persist()
+   535→   535→    }
+   536→   536→
+   537→   537→    fun updateHomeScreenWidget(enabled: Boolean) {
+   538→   538→        _settings.value = _settings.value.copy(homeScreenWidget = enabled); persist()
+   539→   539→    }
+   540→   540→
+   541→   541→    // ── Backup & Restore ──
+   542→   542→
+   543→   543→    fun updateAutoBackup(enabled: Boolean) {
+   544→   544→        _settings.value = _settings.value.copy(autoBackupEnabled = enabled); persist()
+   545→   545→    }
+   546→   546→
+   547→   547→    fun updateBackupIntervalDays(days: Int) {
+   548→   548→        _settings.value = _settings.value.copy(backupIntervalDays = days); persist()
+   549→   549→    }
+   550→   550→
+   551→   551→    fun updateBackupPath(path: String) {
+   552→   552→        _settings.value = _settings.value.copy(backupPath = path); persist()
+   553→   553→    }
+   554→   554→
+   555→   555→    fun updateCloudSync(enabled: Boolean) {
+   556→   556→        _settings.value = _settings.value.copy(cloudSyncEnabled = enabled); persist()
+   557→   557→    }
+   558→   558→
+   559→   559→    // ── Connectivity ──
+   560→   560→
+   561→   561→    fun updateUsbDetectionAlert(enabled: Boolean) {
+   562→   562→        _settings.value = _settings.value.copy(usbDetectionAlert = enabled); persist()
+   563→   563→    }
+   564→   564→
+   565→   565→    fun updateWifiSecurityScan(enabled: Boolean) {
+   566→   566→        _settings.value = _settings.value.copy(wifiSecurityScan = enabled); persist()
+   567→   567→    }
+   568→   568→
+   569→   569→    fun updateBleScan(enabled: Boolean) {
+   570→   570→        _settings.value = _settings.value.copy(bleScanEnabled = enabled); persist()
+   571→   571→    }
+   572→   572→
+   573→   573→    fun updateUntrustedNetworkAlert(enabled: Boolean) {
+   574→   574→        _settings.value = _settings.value.copy(untrustedNetworkAlert = enabled); persist()
+   575→   575→    }
+   576→   576→
+   577→   577→    // ── Automation ──
+   578→   578→
+   579→   579→    fun updateTaskerPlugin(enabled: Boolean) {
+   580→   580→        _settings.value = _settings.value.copy(taskerPluginEnabled = enabled); persist()
+   581→   581→    }
+   582→   582→
+   583→   583→    fun updateWebhookUrl(url: String) {
+   584→   584→        _settings.value = _settings.value.copy(webhookUrl = url); persist()
+   585→   585→    }
+   586→   586→
+   587→   587→    fun updateIntentTrigger(enabled: Boolean) {
+   588→   588→        _settings.value = _settings.value.copy(intentTriggerEnabled = enabled); persist()
+   589→   589→    }
+   590→   590→
+   591→   591→    fun updateSmsCommands(enabled: Boolean) {
+   592→   592→        _settings.value = _settings.value.copy(smsCommandsEnabled = enabled); persist()
+   593→   593→    }
+   594→   594→
+   595→   595→    // ── Remote Control ──
+   596→   596→
+   597→   597→    fun updateRemotePairing(enabled: Boolean) {
+   598→   598→        _settings.value = _settings.value.copy(remotePairingEnabled = enabled); persist()
+   599→   599→    }
+   600→   600→
+   601→   601→    fun updateFcmRemoteCommands(enabled: Boolean) {
+   602→   602→        _settings.value = _settings.value.copy(fcmRemoteCommands = enabled); persist()
+   603→   603→    }
+   604→   604→
+   605→   605→    fun updatePairingCode(code: String) {
+   606→   606→        _settings.value = _settings.value.copy(pairingCode = code); persist()
+   607→   607→    }
+   608→   608→
+   609→   609→    fun updateAutoPairTrusted(enabled: Boolean) {
+   610→   610→        _settings.value = _settings.value.copy(autoPairTrusted = enabled); persist()
+   611→   611→    }
+   612→   612→
+   613→   613→    // ── User Interface ──
+   614→   614→
+   615→   615→    fun updateFontScale(scale: Int) {
+   616→   616→        _settings.value = _settings.value.copy(fontScale = scale); persist()
+   617→   617→    }
+   618→   618→
+   619→   619→    fun updateCompactMode(enabled: Boolean) {
+   620→   620→        _settings.value = _settings.value.copy(compactModeEnabled = enabled); persist()
+   621→   621→    }
+   622→   622→
+   623→   623→    fun updateStatusBarIndicator(enabled: Boolean) {
+   624→   624→        _settings.value = _settings.value.copy(statusBarIndicator = enabled); persist()
+   625→   625→    }
+   626→   626→
+   627→   627→    fun updateFloatingWidgetEnabled(enabled: Boolean) {
+   628→   628→        _settings.value = _settings.value.copy(floatingWidgetEnabled = enabled); persist()
+   629→   629→    }
+   630→   630→
+   631→   631→    // ── Storage ──
+   632→   632→
+   633→   633→    fun updateReportStoragePath(path: String) {
+   634→   634→        _settings.value = _settings.value.copy(reportStoragePath = path); persist()
+   635→   635→    }
+   636→   636→
+   637→   637→    fun updateCacheCleanupOnExit(enabled: Boolean) {
+   638→   638→        _settings.value = _settings.value.copy(cacheCleanupOnExit = enabled); persist()
+   639→   639→    }
+   640→   640→
+   641→   641→    fun updateMaxCacheSizeMb(size: Int) {
+   642→   642→        _settings.value = _settings.value.copy(maxCacheSizeMb = size); persist()
+   643→   643→    }
+   644→   644→
+   645→   645→    fun updateBackupRetentionDays(days: Int) {
+   646→   646→        _settings.value = _settings.value.copy(backupRetentionDays = days); persist()
+   647→   647→    }
+   648→   648→
+   649→   649→    // ── Developer ──
+   650→   650→
+   651→   651→    fun updateAdbMonitor(enabled: Boolean) {
+   652→   652→        _settings.value = _settings.value.copy(adbMonitorEnabled = enabled); persist()
+   653→   653→    }
+   654→   654→
+   655→   655→    fun updateDevModeWarning(enabled: Boolean) {
+   656→   656→        _settings.value = _settings.value.copy(devModeWarning = enabled); persist()
+   657→   657→    }
+   658→   658→
+   659→   659→    fun updateDebugLogging(enabled: Boolean) {
+   660→   660→        _settings.value = _settings.value.copy(debugLoggingEnabled = enabled); persist()
+   661→   661→    }
+   662→   662→
+   663→   663→    fun updateMockLocationDetection(enabled: Boolean) {
+   664→   664→        _settings.value = _settings.value.copy(mockLocationDetection = enabled); persist()
+   665→   665→    }
+   666→   666→
+   667→   667→    // ── File Monitor ──
+   668→   668→
+   669→   669→    fun updateFileIntegrityCheck(enabled: Boolean) {
+   670→   670→        _settings.value = _settings.value.copy(fileIntegrityCheck = enabled); persist()
+   671→   671→    }
+   672→   672→
+   673→   673→    fun updateInotifyWatch(enabled: Boolean) {
+   674→   674→        _settings.value = _settings.value.copy(inotifyWatchEnabled = enabled); persist()
+   675→   675→    }
+   676→   676→
+   677→   677→    fun updateSystemPartitionMonitor(enabled: Boolean) {
+   678→   678→        _settings.value = _settings.value.copy(systemPartitionMonitor = enabled); persist()
+   679→   679→    }
+   680→   680→
+   681→   681→    fun updateCriticalFileAlert(enabled: Boolean) {
+   682→   682→        _settings.value = _settings.value.copy(criticalFileAlert = enabled); persist()
+   683→   683→    }
+   684→   684→
+   685→   685→    // ── Process ──
+   686→   686→
+   687→   687→    fun updateSuspiciousProcessDetect(enabled: Boolean) {
+   688→   688→        _settings.value = _settings.value.copy(suspiciousProcessDetect = enabled); persist()
+   689→   689→    }
+   690→   690→
+   691→   691→    fun updateProcessWhitelist(list: String) {
+   692→   692→        _settings.value = _settings.value.copy(processWhitelist = list); persist()
+   693→   693→    }
+   694→   694→
+   695→   695→    fun updateBgProcessMonitor(enabled: Boolean) {
+   696→   696→        _settings.value = _settings.value.copy(bgProcessMonitor = enabled); persist()
+   697→   697→    }
+   698→   698→
+   699→   699→    fun updateProcessAnomalyAlert(enabled: Boolean) {
+   700→   700→        _settings.value = _settings.value.copy(processAnomalyAlert = enabled); persist()
+   701→   701→    }
+   702→   702→
+   703→   703→    // ── Battery Optimization ──
+   704→   704→
+   705→   705→    fun updateBatteryWhitelist(enabled: Boolean) {
+   706→   706→        _settings.value = _settings.value.copy(batteryWhitelistEnabled = enabled); persist()
+   707→   707→    }
+   708→   708→
+   709→   709→    fun updateDozeExempt(enabled: Boolean) {
+   710→   710→        _settings.value = _settings.value.copy(dozeExemptEnabled = enabled); persist()
+   711→   711→    }
+   712→   712→
+   713→   713→    fun updateWakeLockControl(enabled: Boolean) {
+   714→   714→        _settings.value = _settings.value.copy(wakeLockControl = enabled); persist()
+   715→   715→    }
+   716→   716→
+   717→   717→    fun updatePowerSaveOverride(enabled: Boolean) {
+   718→   718→        _settings.value = _settings.value.copy(powerSaveOverride = enabled); persist()
+   719→   719→    }
+   720→   720→
+   721→   721→    // ── Permission ──
+   722→   722→
+   723→   723→    fun updateAppPermissionMonitor(enabled: Boolean) {
+   724→   724→        _settings.value = _settings.value.copy(appPermissionMonitor = enabled); persist()
+   725→   725→    }
+   726→   726→
+   727→   727→    fun updatePermissionChangeAlert(enabled: Boolean) {
+   728→   728→        _settings.value = _settings.value.copy(permissionChangeAlert = enabled); persist()
+   729→   729→    }
+   730→   730→
+   731→   731→    fun updateSuspiciousPermissionDetect(enabled: Boolean) {
+   732→   732→        _settings.value = _settings.value.copy(suspiciousPermissionDetect = enabled); persist()
+   733→   733→    }
+   734→   734→
+   735→   735→    fun updateRuntimePermissionAudit(enabled: Boolean) {
+   736→   736→        _settings.value = _settings.value.copy(runtimePermissionAudit = enabled); persist()
+   737→   737→    }
+   738→   738→
+   739→   739→    // ── Sensor ──
+   740→   740→
+   741→   741→    fun updateCameraAccessMonitor(enabled: Boolean) {
+   742→   742→        _settings.value = _settings.value.copy(cameraAccessMonitor = enabled); persist()
+   743→   743→    }
+   744→   744→
+   745→   745→    fun updateMicAccessMonitor(enabled: Boolean) {
+   746→   746→        _settings.value = _settings.value.copy(micAccessMonitor = enabled); persist()
+   747→   747→    }
+   748→   748→
+   749→   749→    fun updateSensorAccessLog(enabled: Boolean) {
+   750→   750→        _settings.value = _settings.value.copy(sensorAccessLog = enabled); persist()
+   751→   751→    }
+   752→   752→
+   753→   753→    fun updateClipboardMonitor(enabled: Boolean) {
+   754→   754→        _settings.value = _settings.value.copy(clipboardMonitorEnabled = enabled); persist()
+   755→   755→    }
+   756→   756→
+   757→   757→    // ── Audit ──
+   758→   758→
+   759→   759→    fun updateAuditTrail(enabled: Boolean) {
+   760→   760→        _settings.value = _settings.value.copy(auditTrailEnabled = enabled); persist()
+   761→   761→    }
+   762→   762→
+   763→   763→    fun updateComplianceMode(enabled: Boolean) {
+   764→   764→        _settings.value = _settings.value.copy(complianceModeEnabled = enabled); persist()
+   765→   765→    }
+   766→   766→
+   767→   767→    fun updateEventRetentionDays(days: Int) {
+   768→   768→        _settings.value = _settings.value.copy(eventRetentionDays = days); persist()
+   769→   769→    }
+   770→   770→
+   771→   771→    fun updateAuditExport(enabled: Boolean) {
+   772→   772→        _settings.value = _settings.value.copy(auditExportEnabled = enabled); persist()
+   773→   773→    }
+   774→   774→
+   775→   775→    // ── Community ──
+   776→   776→
+   777→   777→    fun updateCommunityForum(enabled: Boolean) {
+   778→   778→        _settings.value = _settings.value.copy(communityForum = enabled); persist()
+   779→   779→    }
+   780→   780→
+   781→   781→    fun updateDiscordLink(enabled: Boolean) {
+   782→   782→        _settings.value = _settings.value.copy(discordLink = enabled); persist()
+   783→   783→    }
+   784→   784→
+   785→   785→    fun updateTelegramBot(enabled: Boolean) {
+   786→   786→        _settings.value = _settings.value.copy(telegramBotEnabled = enabled); persist()
+   787→   787→    }
+   788→   788→
+   789→   789→    fun updateGithubIntegration(enabled: Boolean) {
+   790→   790→        _settings.value = _settings.value.copy(githubIntegration = enabled); persist()
+   791→   791→    }
+   792→   792→
+   793→   793→    // ── Experimental ──
+   794→   794→
+   795→   795→    fun updateBetaFeatureFlags(enabled: Boolean) {
+   796→   796→        _settings.value = _settings.value.copy(betaFeatureFlags = enabled); persist()
+   797→   797→    }
+   798→   798→
+   799→   799→    fun updateUnreleasedMod(enabled: Boolean) {
+   800→   800→        _settings.value = _settings.value.copy(unreleasedModEnabled = enabled); persist()
+   801→   801→    }
+   802→   802→
+   803→   803→    fun updateMlDetection(enabled: Boolean) {
+   804→   804→        _settings.value = _settings.value.copy(mlDetectionEnabled = enabled); persist()
+   805→   805→    }
+   806→   806→
+   807→   807→    fun updateEarlyAccessProgram(enabled: Boolean) {
+   808→   808→        _settings.value = _settings.value.copy(earlyAccessProgram = enabled); persist()
+   809→   809→    }
+   810→   810→
+   811→   811→    // ── Root Management ──
+   812→   812→
+   813→   813→    fun updateSuBinaryPath(path: String) {
+   814→   814→        _settings.value = _settings.value.copy(suBinaryPath = path); persist()
+   815→   815→    }
+   816→   816→
+   817→   817→    fun updateRootAccessTimeout(seconds: Int) {
+   818→   818→        _settings.value = _settings.value.copy(rootAccessTimeout = seconds); persist()
+   819→   819→    }
+   820→   820→
+   821→   821→    fun updateRootPermissionAudit(enabled: Boolean) {
+   822→   822→        _settings.value = _settings.value.copy(rootPermissionAudit = enabled); persist()
+   823→   823→    }
+   824→   824→
+   825→   825→    fun updateMultiUserSupport(enabled: Boolean) {
+   826→   826→        _settings.value = _settings.value.copy(multiUserSupport = enabled); persist()
+   827→   827→    }
+   828→   828→
+   829→   829→    // ── SELinux ──
+   830→   830→
+   831→   831→    fun updateSelinuxContext(context: String) {
+   832→   832→        _settings.value = _settings.value.copy(selinuxContext = context); persist()
+   833→   833→    }
+   834→   834→
+   835→   835→    fun updateSelinuxPolicyCheck(enabled: Boolean) {
+   836→   836→        _settings.value = _settings.value.copy(selinuxPolicyCheck = enabled); persist()
+   837→   837→    }
+   838→   838→
+   839→   839→    fun updateSelinuxModeToggle(enabled: Boolean) {
+   840→   840→        _settings.value = _settings.value.copy(selinuxModeToggle = enabled); persist()
+   841→   841→    }
+   842→   842→
+   843→   843→    fun updateContextLabelVerify(enabled: Boolean) {
+   844→   844→        _settings.value = _settings.value.copy(contextLabelVerify = enabled); persist()
+   845→   845→    }
+   846→   846→
+   847→   847→    // ── Namespace ──
+   848→   848→
+   849→   849→    fun updateMountNamespaceIsolation(enabled: Boolean) {
+   850→   850→        _settings.value = _settings.value.copy(mountNamespaceIsolation = enabled); persist()
+   851→   851→    }
+   852→   852→
+   853→   853→    fun updatePidNamespace(enabled: Boolean) {
+   854→   854→        _settings.value = _settings.value.copy(pidNamespace = enabled); persist()
+   855→   855→    }
+   856→   856→
+   857→   857→    fun updateNetworkNamespace(enabled: Boolean) {
+   858→   858→        _settings.value = _settings.value.copy(networkNamespace = enabled); persist()
+   859→   859→    }
+   860→   860→
+   861→   861→    fun updateIpcNamespace(enabled: Boolean) {
+   862→   862→        _settings.value = _settings.value.copy(ipcNamespace = enabled); persist()
+   863→   863→    }
+   864→   864→
+   865→   865→    // ── Module ──
+   866→   866→
+   867→   867→    fun updateModuleLoadOrder(order: String) {
+   868→   868→        _settings.value = _settings.value.copy(moduleLoadOrder = order); persist()
+   869→   869→    }
+   870→   870→
+   871→   871→    fun updateModuleCompatCheck(enabled: Boolean) {
+   872→   872→        _settings.value = _settings.value.copy(moduleCompatCheck = enabled); persist()
+   873→   873→    }
+   874→   874→
+   875→   875→    fun updateModuleUpdatePolicy(policy: String) {
+   876→   876→        _settings.value = _settings.value.copy(moduleUpdatePolicy = policy); persist()
+   877→   877→    }
+   878→   878→
+   879→   879→    fun updateModuleBlacklist(list: String) {
+   880→   880→        _settings.value = _settings.value.copy(moduleBlacklist = list); persist()
+   881→   881→    }
+   882→   882→
+   883→   883→    // ── Report ──
+   884→   884→
+   885→   885→    fun updateReportDetailLevel(level: String) {
+   886→   886→        _settings.value = _settings.value.copy(reportDetailLevel = level); persist()
+   887→   887→    }
+   888→   888→
+   889→   889→    fun updateReportFormatDetailed(format: String) {
+   890→   890→        _settings.value = _settings.value.copy(reportFormatDetailed = format); persist()
+   891→   891→    }
+   892→   892→
+   893→   893→    fun updateAutoReportShare(enabled: Boolean) {
+   894→   894→        _settings.value = _settings.value.copy(autoReportShare = enabled); persist()
+   895→   895→    }
+   896→   896→
+   897→   897→    fun updateReportEncryption(enabled: Boolean) {
+   898→   898→        _settings.value = _settings.value.copy(reportEncryption = enabled); persist()
+   899→   899→    }
+   900→   900→
+   901→   901→    // ── Secure Input ──
+   902→   902→
+   903→   903→    fun updateSecureKeyboard(enabled: Boolean) {
+   904→   904→        _settings.value = _settings.value.copy(secureKeyboard = enabled); persist()
+   905→   905→    }
+   906→   906→
+   907→   907→    fun updateInputObfuscation(enabled: Boolean) {
+   908→   908→        _settings.value = _settings.value.copy(inputObfuscation = enabled); persist()
+   909→   909→    }
+   910→   910→
+   911→   911→    fun updateOverlayProtection(enabled: Boolean) {
+   912→   912→        _settings.value = _settings.value.copy(overlayProtection = enabled); persist()
+   913→   913→    }
+   914→   914→
+   915→   915→    fun updateKeyloggingDetect(enabled: Boolean) {
+   916→   916→        _settings.value = _settings.value.copy(keyloggingDetect = enabled); persist()
+   917→   917→    }
+   918→   918→
+   919→   919→    // ── Wireless ──
+   920→   920→
+   921→   921→    fun updateWifiHotspotDetect(enabled: Boolean) {
+   922→   922→        _settings.value = _settings.value.copy(wifiHotspotDetect = enabled); persist()
+   923→   923→    }
+   924→   924→
+   925→   925→    fun updateBluetoothTetherAlert(enabled: Boolean) {
+   926→   926→        _settings.value = _settings.value.copy(bluetoothTetherAlert = enabled); persist()
+   927→   927→    }
+   928→   928→
+   929→   929→    fun updateNfcDetection(enabled: Boolean) {
+   930→   930→        _settings.value = _settings.value.copy(nfcDetection = enabled); persist()
+   931→   931→    }
+   932→   932→
+   933→   933→    fun updateAirplaneModeBehavior(enabled: Boolean) {
+   934→   934→        _settings.value = _settings.value.copy(airplaneModeBehavior = enabled); persist()
+   935→   935→    }
+   936→   936→
+   937→   937→    // ── Emergency Comm ──
+   938→   938→
+   939→   939→    fun updateEmergencySmsTemplate(template: String) {
+   940→   940→        _settings.value = _settings.value.copy(emergencySmsTemplate = template); persist()
+   941→   941→    }
+   942→   942→
+   943→   943→    fun updateEmergencyCall(enabled: Boolean) {
+   944→   944→        _settings.value = _settings.value.copy(emergencyCall = enabled); persist()
+   945→   945→    }
+   946→   946→
+   947→   947→    fun updateLocationSharing(enabled: Boolean) {
+   948→   948→        _settings.value = _settings.value.copy(locationSharing = enabled); persist()
+   949→   949→    }
+   950→   950→
+   951→   951→    fun updateHeartbeatPing(enabled: Boolean) {
+   952→   952→        _settings.value = _settings.value.copy(heartbeatPing = enabled); persist()
+   953→   953→    }
+   954→   954→
+   955→   955→    // ── Play Integrity ──
+   956→   956→
+   957→   957→    fun updatePlayIntegrityCheck(enabled: Boolean) {
+   958→   958→        _settings.value = _settings.value.copy(playIntegrityCheck = enabled); persist()
+   959→   959→    }
+   960→   960→
+   961→   961→    fun updateKeyAttestation(enabled: Boolean) {
+   962→   962→        _settings.value = _settings.value.copy(keyAttestationEnabled = enabled); persist()
+   963→   963→    }
+   964→   964→
+   965→   965→    fun updateCtsProfileMatch(enabled: Boolean) {
+   966→   966→        _settings.value = _settings.value.copy(ctsProfileMatch = enabled); persist()
+   967→   967→    }
+   968→   968→
+   969→   969→    fun updateBasicIntegrity(enabled: Boolean) {
+   970→   970→        _settings.value = _settings.value.copy(basicIntegrity = enabled); persist()
+   971→   971→    }
+   972→   972→
+   973→   973→    // ── VPN ──
+   974→   974→
+   975→   975→    fun updateAlwaysOnVpn(enabled: Boolean) {
+   976→   976→        _settings.value = _settings.value.copy(alwaysOnVpn = enabled); persist()
+   977→   977→    }
+   978→   978→
+   979→   979→    fun updateVpnKillSwitch(enabled: Boolean) {
+   980→   980→        _settings.value = _settings.value.copy(vpnKillSwitch = enabled); persist()
+   981→   981→    }
+   982→   982→
+   983→   983→    fun updateDnsLeakProtection(enabled: Boolean) {
+   984→   984→        _settings.value = _settings.value.copy(dnsLeakProtection = enabled); persist()
+   985→   985→    }
+   986→   986→
+   987→   987→    fun updateSplitTunneling(enabled: Boolean) {
+   988→   988→        _settings.value = _settings.value.copy(splitTunneling = enabled); persist()
+   989→   989→    }
+   990→   990→
+   991→   991→    fun updateVpnProxyConfig(config: String) {
+   992→   992→        _settings.value = _settings.value.copy(vpnProxyConfig = config); persist()
+   993→   993→    }
+   994→   994→
+   995→   995→    // ── Certificate ──
+   996→   996→
+   997→   997→    fun updateCertPinning(enabled: Boolean) {
+   998→   998→        _settings.value = _settings.value.copy(certPinningEnabled = enabled); persist()
+   999→   999→    }
+  1000→  1000→
+  1001→  1001→    fun updateSslVerificationLevel(level: String) {
+  1002→  1002→        _settings.value = _settings.value.copy(sslVerificationLevel = level); persist()
+  1003→  1003→    }
+  1004→  1004→
+  1005→  1005→    fun updateTrustedCaList(list: String) {
+  1006→  1006→        _settings.value = _settings.value.copy(trustedCaList = list); persist()
+  1007→  1007→    }
+  1008→  1008→
+  1009→  1009→    fun updateCertTransparency(enabled: Boolean) {
+  1010→  1010→        _settings.value = _settings.value.copy(certTransparency = enabled); persist()
+  1011→  1011→    }
+  1012→  1012→
+  1013→  1013→    // ── Magisk ──
+  1014→  1014→
+  1015→  1015→    fun updateMagiskVersionCheck(enabled: Boolean) {
+  1016→  1016→        _settings.value = _settings.value.copy(magiskVersionCheck = enabled); persist()
+  1017→  1017→    }
+  1018→  1018→
+  1019→  1019→    fun updateMagiskModuleScan(enabled: Boolean) {
+  1020→  1020→        _settings.value = _settings.value.copy(magiskModuleScan = enabled); persist()
+  1021→  1021→    }
+  1022→  1022→
+  1023→  1023→    fun updateZygiskDetect(enabled: Boolean) {
+  1024→  1024→        _settings.value = _settings.value.copy(zygiskDetect = enabled); persist()
+  1025→  1025→    }
+  1026→  1026→
+  1027→  1027→    fun updateMagiskHideList(list: String) {
+  1028→  1028→        _settings.value = _settings.value.copy(magiskHideList = list); persist()
+  1029→  1029→    }
+  1030→  1030→
+  1031→  1031→    // ── Xposed ──
+  1032→  1032→
+  1033→  1033→    fun updateXposedDetect(enabled: Boolean) {
+  1034→  1034→        _settings.value = _settings.value.copy(xposedDetectEnabled = enabled); persist()
+  1035→  1035→    }
+  1036→  1036→
+  1037→  1037→    fun updateXposedModuleScan(enabled: Boolean) {
+  1038→  1038→        _settings.value = _settings.value.copy(xposedModuleScan = enabled); persist()
+  1039→  1039→    }
+  1040→  1040→
+  1041→  1041→    fun updateLsposedDetect(enabled: Boolean) {
+  1042→  1042→        _settings.value = _settings.value.copy(lsposedDetectEnabled = enabled); persist()
+  1043→  1043→    }
+  1044→  1044→
+  1045→  1045→    fun updateRiruDetect(enabled: Boolean) {
+  1046→  1046→        _settings.value = _settings.value.copy(riruDetectEnabled = enabled); persist()
+  1047→  1047→    }
+  1048→  1048→
+  1049→  1049→    // ── Script ──
+  1050→  1050→
+  1051→  1051→    fun updateCustomInitScripts(scripts: String) {
+  1052→  1052→        _settings.value = _settings.value.copy(customInitScripts = scripts); persist()
+  1053→  1053→    }
+  1054→  1054→
+  1055→  1055→    fun updatePostBootScripts(scripts: String) {
+  1056→  1056→        _settings.value = _settings.value.copy(postBootScripts = scripts); persist()
+  1057→  1057→    }
+  1058→  1058→
+  1059→  1059→    fun updateScriptRunOnSchedule(enabled: Boolean) {
+  1060→  1060→        _settings.value = _settings.value.copy(scriptRunOnSchedule = enabled); persist()
+  1061→  1061→    }
+  1062→  1062→
+  1063→  1063→    fun updateScriptLogOutput(enabled: Boolean) {
+  1064→  1064→        _settings.value = _settings.value.copy(scriptLogOutput = enabled); persist()
+  1065→  1065→    }
+  1066→  1066→
+  1067→  1067→    // ── Hardware ──
+  1068→  1068→
+  1069→  1069→    fun updateHardwareAttestation(enabled: Boolean) {
+  1070→  1070→        _settings.value = _settings.value.copy(hardwareAttestation = enabled); persist()
+  1071→  1071→    }
+  1072→  1072→
+  1073→  1073→    fun updateTeeCheck(enabled: Boolean) {
+  1074→  1074→        _settings.value = _settings.value.copy(teeCheckEnabled = enabled); persist()
+  1075→  1075→    }
+  1076→  1076→
+  1077→  1077→    fun updateSecureElementCheck(enabled: Boolean) {
+  1078→  1078→        _settings.value = _settings.value.copy(secureElementCheck = enabled); persist()
+  1079→  1079→    }
+  1080→  1080→
+  1081→  1081→    fun updateFingerprintHardwareCheck(enabled: Boolean) {
+  1082→  1082→        _settings.value = _settings.value.copy(fingerprintHardwareCheck = enabled); persist()
+  1083→  1083→    }
+  1084→  1084→
+  1085→  1085→    // ── System Integrity ──
+  1086→  1086→
+  1087→  1087→    fun updateDmVerityCheck(enabled: Boolean) {
+  1088→  1088→        _settings.value = _settings.value.copy(dmVerityCheck = enabled); persist()
+  1089→  1089→    }
+  1090→  1090→
+  1091→  1091→    fun updateAvbCheck(enabled: Boolean) {
+  1092→  1092→        _settings.value = _settings.value.copy(avbCheck = enabled); persist()
+  1093→  1093→    }
+  1094→  1094→
+  1095→  1095→    fun updateSystemPartitionRo(enabled: Boolean) {
+  1096→  1096→        _settings.value = _settings.value.copy(systemPartitionRo = enabled); persist()
+  1097→  1097→    }
+  1098→  1098→
+  1099→  1099→    fun updateVbmetaCheck(enabled: Boolean) {
+  1100→  1100→        _settings.value = _settings.value.copy(vbmetaCheck = enabled); persist()
+  1101→  1101→    }
+  1102→  1102→
+  1103→  1103→    // ── Privacy Protection ──
+  1104→  1104→
+  1105→  1105→    fun updateScreenRecordDetect(enabled: Boolean) {
+  1106→  1106→        _settings.value = _settings.value.copy(screenRecordDetect = enabled); persist()
+  1107→  1107→    }
+  1108→  1108→
+  1109→  1109→    fun updateVpnDetectEnabled(enabled: Boolean) {
+  1110→  1110→        _settings.value = _settings.value.copy(vpnDetectEnabled = enabled); persist()
+  1111→  1111→    }
+  1112→  1112→
+  1113→  1113→    fun updateScreenshotBlock(enabled: Boolean) {
+  1114→  1114→        _settings.value = _settings.value.copy(screenshotBlock = enabled); persist()
+  1115→  1115→    }
+  1116→  1116→
+  1117→  1117→    // ── Network Security ──
+  1118→  1118→
+  1119→  1119→    fun updateDnsOverHttps(enabled: Boolean) {
+  1120→  1120→        _settings.value = _settings.value.copy(dnsOverHttps = enabled); persist()
+  1121→  1121→    }
+  1122→  1122→
+  1123→  1123→    fun updateDnsOverHttpsProvider(provider: String) {
+  1124→  1124→        _settings.value = _settings.value.copy(dnsOverHttpsProvider = provider); persist()
+  1125→  1125→    }
+  1126→  1126→
+  1127→  1127→    fun updateArpSpoofDetect(enabled: Boolean) {
+  1128→  1128→        _settings.value = _settings.value.copy(arpSpoofDetect = enabled); persist()
+  1129→  1129→    }
+  1130→  1130→
+  1131→  1131→    fun updateMacRandomization(enabled: Boolean) {
+  1132→  1132→        _settings.value = _settings.value.copy(macRandomization = enabled); persist()
+  1133→  1133→    }
+  1134→  1134→
+  1135→  1135→    fun resetToDefaults() {
+  1136→  1136→        _settings.value = AppSettings(); persist()
+  1137→  1137→    }
+  1138→  1138→
+  1139→  1139→    private fun persist() {
+  1140→  1140→        viewModelScope.launch { repository.save(_settings.value) }
+  1141→  1141→    }
+  1142→  1142→}
+  1143→  1143→

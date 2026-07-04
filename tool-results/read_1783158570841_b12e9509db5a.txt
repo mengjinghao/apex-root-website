@@ -1,0 +1,452 @@
+     1→   450→        stealthHideIcon = prefs.getBoolean(KEY_STEALTH_HIDE_ICON, false),
+     2→   451→        stealthHideRecent = prefs.getBoolean(KEY_STEALTH_HIDE_RECENT, false),
+     3→   452→        stealthHideNotification = prefs.getBoolean(KEY_STEALTH_HIDE_NOTIFICATION, false),
+     4→   453→        stealthFakeAppName = prefs.getString(KEY_STEALTH_FAKE_APP_NAME, "") ?: "",
+     5→   454→        emergencyLockDevice = prefs.getBoolean(KEY_EMERGENCY_LOCK, false),
+     6→   455→        emergencyWipeData = prefs.getBoolean(KEY_EMERGENCY_WIPE, false),
+     7→   456→        emergencyShutdown = prefs.getBoolean(KEY_EMERGENCY_SHUTDOWN, false),
+     8→   457→        emergencyNotifyContacts = prefs.getBoolean(KEY_EMERGENCY_NOTIFY, false),
+     9→   458→        pmuSpoofEnabled = prefs.getBoolean(KEY_PMU_SPOOF, false),
+    10→   459→        timingSpoofEnabled = prefs.getBoolean(KEY_TIMING_SPOOF, false),
+    11→   460→        memorySpoofEnabled = prefs.getBoolean(KEY_MEMORY_SPOOF, false),
+    12→   461→        soundScanComplete = prefs.getBoolean(KEY_SOUND_SCAN_COMPLETE, true),
+    13→   462→        soundRiskAlert = prefs.getBoolean(KEY_SOUND_RISK_ALERT, true),
+    14→   463→        soundGuardAlert = prefs.getBoolean(KEY_SOUND_GUARD_ALERT, true),
+    15→   464→        hapticFeedback = prefs.getBoolean(KEY_HAPTIC_FEEDBACK, true),
+    16→   465→        appLockEnabled = prefs.getBoolean(KEY_APP_LOCK_ENABLED, false),
+    17→   466→        appLockPin = prefs.getString(KEY_APP_LOCK_PIN, "") ?: "",
+    18→   467→        appLockBiometric = prefs.getBoolean(KEY_APP_LOCK_BIOMETRIC, false),
+    19→   468→        autoExportEnabled = prefs.getBoolean(KEY_AUTO_EXPORT, false),
+    20→   469→        exportFormat = prefs.getString(KEY_EXPORT_FORMAT, "json") ?: "json",
+    21→   470→        customEncryptionKey = prefs.getString(KEY_CUSTOM_ENCRYPTION_KEY, "") ?: "",
+    22→   471→        keyRotationHours = prefs.getInt(KEY_KEY_ROTATION_HOURS, 168),
+    23→   472→        networkDnsMonitor = prefs.getBoolean(KEY_NETWORK_DNS_MONITOR, false),
+    24→   473→        networkTrafficMonitor = prefs.getBoolean(KEY_NETWORK_TRAFFIC_MONITOR, false),
+    25→   474→        kernelModuleCheckEnabled = prefs.getBoolean(KEY_KERNEL_MODULE_CHECK, true),
+    26→   475→        autoSilenceOnGame = prefs.getBoolean(KEY_AUTO_SILENCE_ON_GAME, true),
+    27→   476→        quickScanToggle = prefs.getBoolean(KEY_QUICK_SCAN_TOGGLE, true),
+    28→   477→        floatingWidget = prefs.getBoolean(KEY_FLOATING_WIDGET, false),
+    29→   478→        gestureShortcut = prefs.getBoolean(KEY_GESTURE_SHORTCUT, false),
+    30→   479→        homeScreenWidget = prefs.getBoolean(KEY_HOME_SCREEN_WIDGET, false),
+    31→   480→        autoBackupEnabled = prefs.getBoolean(KEY_AUTO_BACKUP, false),
+    32→   481→        backupIntervalDays = prefs.getInt(KEY_BACKUP_INTERVAL_DAYS, 7),
+    33→   482→        backupPath = prefs.getString(KEY_BACKUP_PATH, "") ?: "",
+    34→   483→        cloudSyncEnabled = prefs.getBoolean(KEY_CLOUD_SYNC, false),
+    35→   484→        usbDetectionAlert = prefs.getBoolean(KEY_USB_DETECTION_ALERT, true),
+    36→   485→        wifiSecurityScan = prefs.getBoolean(KEY_WIFI_SECURITY_SCAN, true),
+    37→   486→        bleScanEnabled = prefs.getBoolean(KEY_BLE_SCAN, false),
+    38→   487→        untrustedNetworkAlert = prefs.getBoolean(KEY_UNTRUSTED_NETWORK_ALERT, true),
+    39→   488→        taskerPluginEnabled = prefs.getBoolean(KEY_TASKER_PLUGIN, false),
+    40→   489→        webhookUrl = prefs.getString(KEY_WEBHOOK_URL, "") ?: "",
+    41→   490→        intentTriggerEnabled = prefs.getBoolean(KEY_INTENT_TRIGGER, false),
+    42→   491→        smsCommandsEnabled = prefs.getBoolean(KEY_SMS_COMMANDS, false),
+    43→   492→        remotePairingEnabled = prefs.getBoolean(KEY_REMOTE_PAIRING, false),
+    44→   493→        fcmRemoteCommands = prefs.getBoolean(KEY_FCM_REMOTE_COMMANDS, false),
+    45→   494→        pairingCode = prefs.getString(KEY_PAIRING_CODE, "") ?: "",
+    46→   495→        autoPairTrusted = prefs.getBoolean(KEY_AUTO_PAIR_TRUSTED, true),
+    47→   496→        fontScale = prefs.getInt(KEY_FONT_SCALE, 100),
+    48→   497→        compactModeEnabled = prefs.getBoolean(KEY_COMPACT_MODE, false),
+    49→   498→        statusBarIndicator = prefs.getBoolean(KEY_STATUS_BAR_INDICATOR, false),
+    50→   499→        floatingWidgetEnabled = prefs.getBoolean(KEY_FLOATING_WIDGET_ENABLED, false),
+    51→   500→        reportStoragePath = prefs.getString(KEY_REPORT_STORAGE_PATH, "") ?: "",
+    52→   501→        cacheCleanupOnExit = prefs.getBoolean(KEY_CACHE_CLEANUP_ON_EXIT, true),
+    53→   502→        maxCacheSizeMb = prefs.getInt(KEY_MAX_CACHE_SIZE_MB, 50),
+    54→   503→        backupRetentionDays = prefs.getInt(KEY_BACKUP_RETENTION_DAYS, 30),
+    55→   504→        adbMonitorEnabled = prefs.getBoolean(KEY_ADB_MONITOR, true),
+    56→   505→        devModeWarning = prefs.getBoolean(KEY_DEV_MODE_WARNING, true),
+    57→   506→        debugLoggingEnabled = prefs.getBoolean(KEY_DEBUG_LOGGING, false),
+    58→   507→        mockLocationDetection = prefs.getBoolean(KEY_MOCK_LOCATION_DETECTION, true),
+    59→   508→        fileIntegrityCheck = prefs.getBoolean(KEY_FILE_INTEGRITY_CHECK, true),
+    60→   509→        inotifyWatchEnabled = prefs.getBoolean(KEY_INOTIFY_WATCH, false),
+    61→   510→        systemPartitionMonitor = prefs.getBoolean(KEY_SYSTEM_PARTITION_MONITOR, true),
+    62→   511→        criticalFileAlert = prefs.getBoolean(KEY_CRITICAL_FILE_ALERT, true),
+    63→   512→        suspiciousProcessDetect = prefs.getBoolean(KEY_SUSPICIOUS_PROCESS_DETECT, true),
+    64→   513→        processWhitelist = prefs.getString(KEY_PROCESS_WHITELIST, "") ?: "",
+    65→   514→        bgProcessMonitor = prefs.getBoolean(KEY_BG_PROCESS_MONITOR, false),
+    66→   515→        processAnomalyAlert = prefs.getBoolean(KEY_PROCESS_ANOMALY_ALERT, true),
+    67→   516→        batteryWhitelistEnabled = prefs.getBoolean(KEY_BATTERY_WHITELIST, false),
+    68→   517→        dozeExemptEnabled = prefs.getBoolean(KEY_DOZE_EXEMPT, false),
+    69→   518→        wakeLockControl = prefs.getBoolean(KEY_WAKE_LOCK_CONTROL, false),
+    70→   519→        powerSaveOverride = prefs.getBoolean(KEY_POWER_SAVE_OVERRIDE, false),
+    71→   520→        appPermissionMonitor = prefs.getBoolean(KEY_APP_PERMISSION_MONITOR, true),
+    72→   521→        permissionChangeAlert = prefs.getBoolean(KEY_PERMISSION_CHANGE_ALERT, true),
+    73→   522→        suspiciousPermissionDetect = prefs.getBoolean(KEY_SUSPICIOUS_PERMISSION_DETECT, true),
+    74→   523→        runtimePermissionAudit = prefs.getBoolean(KEY_RUNTIME_PERMISSION_AUDIT, false),
+    75→   524→        cameraAccessMonitor = prefs.getBoolean(KEY_CAMERA_ACCESS_MONITOR, true),
+    76→   525→        micAccessMonitor = prefs.getBoolean(KEY_MIC_ACCESS_MONITOR, true),
+    77→   526→        sensorAccessLog = prefs.getBoolean(KEY_SENSOR_ACCESS_LOG, false),
+    78→   527→        clipboardMonitorEnabled = prefs.getBoolean(KEY_CLIPBOARD_MONITOR, false),
+    79→   528→        auditTrailEnabled = prefs.getBoolean(KEY_AUDIT_TRAIL, true),
+    80→   529→        complianceModeEnabled = prefs.getBoolean(KEY_COMPLIANCE_MODE, false),
+    81→   530→        eventRetentionDays = prefs.getInt(KEY_EVENT_RETENTION_DAYS, 30),
+    82→   531→        auditExportEnabled = prefs.getBoolean(KEY_AUDIT_EXPORT, false),
+    83→   532→        communityForum = prefs.getBoolean(KEY_COMMUNITY_FORUM, true),
+    84→   533→        discordLink = prefs.getBoolean(KEY_DISCORD_LINK, true),
+    85→   534→        telegramBotEnabled = prefs.getBoolean(KEY_TELEGRAM_BOT, false),
+    86→   535→        githubIntegration = prefs.getBoolean(KEY_GITHUB_INTEGRATION, false),
+    87→   536→        betaFeatureFlags = prefs.getBoolean(KEY_BETA_FEATURE_FLAGS, false),
+    88→   537→        unreleasedModEnabled = prefs.getBoolean(KEY_UNRELEASED_MOD, false),
+    89→   538→        mlDetectionEnabled = prefs.getBoolean(KEY_ML_DETECTION, false),
+    90→   539→        earlyAccessProgram = prefs.getBoolean(KEY_EARLY_ACCESS, false),
+    91→   540→        suBinaryPath = prefs.getString(KEY_SU_BINARY_PATH, "") ?: "",
+    92→   541→        rootAccessTimeout = prefs.getInt(KEY_ROOT_ACCESS_TIMEOUT, 30),
+    93→   542→        rootPermissionAudit = prefs.getBoolean(KEY_ROOT_PERMISSION_AUDIT, false),
+    94→   543→        multiUserSupport = prefs.getBoolean(KEY_MULTI_USER_SUPPORT, true),
+    95→   544→        selinuxContext = prefs.getString(KEY_SELINUX_CONTEXT, "") ?: "",
+    96→   545→        selinuxPolicyCheck = prefs.getBoolean(KEY_SELINUX_POLICY_CHECK, true),
+    97→   546→        selinuxModeToggle = prefs.getBoolean(KEY_SELINUX_MODE_TOGGLE, false),
+    98→   547→        contextLabelVerify = prefs.getBoolean(KEY_CONTEXT_LABEL_VERIFY, true),
+    99→   548→        mountNamespaceIsolation = prefs.getBoolean(KEY_MOUNT_NS_ISOLATION, false),
+   100→   549→        pidNamespace = prefs.getBoolean(KEY_PID_NAMESPACE, false),
+   101→   550→        networkNamespace = prefs.getBoolean(KEY_NETWORK_NAMESPACE, false),
+   102→   551→        ipcNamespace = prefs.getBoolean(KEY_IPC_NAMESPACE, false),
+   103→   552→        moduleLoadOrder = prefs.getString(KEY_MODULE_LOAD_ORDER, "") ?: "",
+   104→   553→        moduleCompatCheck = prefs.getBoolean(KEY_MODULE_COMPAT_CHECK, true),
+   105→   554→        moduleUpdatePolicy = prefs.getString(KEY_MODULE_UPDATE_POLICY, "stable") ?: "stable",
+   106→   555→        moduleBlacklist = prefs.getString(KEY_MODULE_BLACKLIST, "") ?: "",
+   107→   556→        reportDetailLevel = prefs.getString(KEY_REPORT_DETAIL_LEVEL, "standard") ?: "standard",
+   108→   557→        reportFormatDetailed = prefs.getString(KEY_REPORT_FORMAT_DETAILED, "pdf") ?: "pdf",
+   109→   558→        autoReportShare = prefs.getBoolean(KEY_AUTO_REPORT_SHARE, false),
+   110→   559→        reportEncryption = prefs.getBoolean(KEY_REPORT_ENCRYPTION, true),
+   111→   560→        secureKeyboard = prefs.getBoolean(KEY_SECURE_KEYBOARD, false),
+   112→   561→        inputObfuscation = prefs.getBoolean(KEY_INPUT_OBFUSCATION, false),
+   113→   562→        overlayProtection = prefs.getBoolean(KEY_OVERLAY_PROTECTION, true),
+   114→   563→        keyloggingDetect = prefs.getBoolean(KEY_KEYLOGGING_DETECT, true),
+   115→   564→        wifiHotspotDetect = prefs.getBoolean(KEY_WIFI_HOTSPOT_DETECT, true),
+   116→   565→        bluetoothTetherAlert = prefs.getBoolean(KEY_BLUETOOTH_TETHER_ALERT, true),
+   117→   566→        nfcDetection = prefs.getBoolean(KEY_NFC_DETECTION, false),
+   118→   567→        airplaneModeBehavior = prefs.getBoolean(KEY_AIRPLANE_MODE_BEHAVIOR, false),
+   119→   568→        emergencySmsTemplate = prefs.getString(KEY_EMERGENCY_SMS_TEMPLATE, "") ?: "",
+   120→   569→        emergencyCall = prefs.getBoolean(KEY_EMERGENCY_CALL, false),
+   121→   570→        locationSharing = prefs.getBoolean(KEY_LOCATION_SHARING, false),
+   122→   571→        heartbeatPing = prefs.getBoolean(KEY_HEARTBEAT_PING, false),
+   123→   572→        playIntegrityCheck = prefs.getBoolean(KEY_PLAY_INTEGRITY, true),
+   124→   573→        keyAttestationEnabled = prefs.getBoolean(KEY_KEY_ATTESTATION, true),
+   125→   574→        ctsProfileMatch = prefs.getBoolean(KEY_CTS_PROFILE, true),
+   126→   575→        basicIntegrity = prefs.getBoolean(KEY_BASIC_INTEGRITY, true),
+   127→   576→        alwaysOnVpn = prefs.getBoolean(KEY_ALWAYS_ON_VPN, false),
+   128→   577→        vpnKillSwitch = prefs.getBoolean(KEY_VPN_KILL_SWITCH, false),
+   129→   578→        dnsLeakProtection = prefs.getBoolean(KEY_DNS_LEAK_PROTECTION, true),
+   130→   579→        splitTunneling = prefs.getBoolean(KEY_SPLIT_TUNNELING, false),
+   131→   580→        vpnProxyConfig = prefs.getString(KEY_VPN_PROXY_CONFIG, "") ?: "",
+   132→   581→        certPinningEnabled = prefs.getBoolean(KEY_CERT_PINNING, true),
+   133→   582→        sslVerificationLevel = prefs.getString(KEY_SSL_VERIFICATION_LEVEL, "strict") ?: "strict",
+   134→   583→        trustedCaList = prefs.getString(KEY_TRUSTED_CA_LIST, "") ?: "",
+   135→   584→        certTransparency = prefs.getBoolean(KEY_CERT_TRANSPARENCY, false),
+   136→   585→        magiskVersionCheck = prefs.getBoolean(KEY_MAGISK_VERSION_CHECK, true),
+   137→   586→        magiskModuleScan = prefs.getBoolean(KEY_MAGISK_MODULE_SCAN, true),
+   138→   587→        zygiskDetect = prefs.getBoolean(KEY_ZYGISK_DETECT, true),
+   139→   588→        magiskHideList = prefs.getString(KEY_MAGISK_HIDE_LIST, "") ?: "",
+   140→   589→        xposedDetectEnabled = prefs.getBoolean(KEY_XPOSED_DETECT, true),
+   141→   590→        xposedModuleScan = prefs.getBoolean(KEY_XPOSED_MODULE_SCAN, true),
+   142→   591→        lsposedDetectEnabled = prefs.getBoolean(KEY_LSPOSED_DETECT, true),
+   143→   592→        riruDetectEnabled = prefs.getBoolean(KEY_RIRU_DETECT, true),
+   144→   593→        customInitScripts = prefs.getString(KEY_CUSTOM_INIT_SCRIPTS, "") ?: "",
+   145→   594→        postBootScripts = prefs.getString(KEY_POST_BOOT_SCRIPTS, "") ?: "",
+   146→   595→        scriptRunOnSchedule = prefs.getBoolean(KEY_SCRIPT_SCHEDULE, false),
+   147→   596→        scriptLogOutput = prefs.getBoolean(KEY_SCRIPT_LOG_OUTPUT, false),
+   148→   597→        hardwareAttestation = prefs.getBoolean(KEY_HARDWARE_ATTESTATION, true),
+   149→   598→        teeCheckEnabled = prefs.getBoolean(KEY_TEE_CHECK, true),
+   150→   599→        secureElementCheck = prefs.getBoolean(KEY_SECURE_ELEMENT, true),
+   151→   600→        fingerprintHardwareCheck = prefs.getBoolean(KEY_FINGERPRINT_HARDWARE, true),
+   152→   601→        dmVerityCheck = prefs.getBoolean(KEY_DM_VERITY, true),
+   153→   602→        avbCheck = prefs.getBoolean(KEY_AVB, true),
+   154→   603→        systemPartitionRo = prefs.getBoolean(KEY_SYSTEM_PARTITION_RO, true),
+   155→   604→        vbmetaCheck = prefs.getBoolean(KEY_VBMETA, true),
+   156→   605→        screenRecordDetect = prefs.getBoolean(KEY_SCREEN_RECORD_DETECT, true),
+   157→   606→        vpnDetectEnabled = prefs.getBoolean(KEY_VPN_DETECT_ENABLED, true),
+   158→   607→        screenshotBlock = prefs.getBoolean(KEY_SCREENSHOT_BLOCK, false),
+   159→   608→        dnsOverHttps = prefs.getBoolean(KEY_DNS_OVER_HTTPS, false),
+   160→   609→        dnsOverHttpsProvider = prefs.getString(KEY_DNS_OVER_HTTPS_PROVIDER, "cloudflare") ?: "cloudflare",
+   161→   610→        arpSpoofDetect = prefs.getBoolean(KEY_ARP_SPOOF_DETECT, true),
+   162→   611→        macRandomization = prefs.getBoolean(KEY_MAC_RANDOMIZATION, false)
+   163→   612→    )
+   164→   613→
+   165→   614→    fun save(settings: AppSettings) {
+   166→   615→        prefs.edit {
+   167→   616→            putInt(KEY_DETECTION_LEVEL, settings.detectionLevel.value)
+   168→   617→            putBoolean(KEY_AUTO_SCAN, settings.autoScanEnabled)
+   169→   618→            putInt(KEY_AUTO_SCAN_INTERVAL, settings.autoScanInterval.value)
+   170→   619→            putBoolean(KEY_RISK_NOTIFICATION, settings.riskNotificationEnabled)
+   171→   620→            putInt(KEY_RISK_THRESHOLD, settings.riskThreshold)
+   172→   621→            putBoolean(KEY_PLUGIN_L1, settings.pluginL1Enabled)
+   173→   622→            putBoolean(KEY_PLUGIN_L2, settings.pluginL2Enabled)
+   174→   623→            putBoolean(KEY_PLUGIN_L3, settings.pluginL3Enabled)
+   175→   624→            putBoolean(KEY_PLUGIN_L4, settings.pluginL4Enabled)
+   176→   625→            putBoolean(KEY_PLUGIN_L5, settings.pluginL5Enabled)
+   177→   626→            putBoolean(KEY_PLUGIN_L6, settings.pluginL6Enabled)
+   178→   627→            putBoolean(KEY_PLUGIN_L7, settings.pluginL7Enabled)
+   179→   628→            putBoolean(KEY_GUARD_ENABLED, settings.guardEnabled)
+   180→   629→            putInt(KEY_GUARD_LEVEL, settings.guardLevel.value)
+   181→   630→            putInt(KEY_GUARD_SELF_CHECK_INTERVAL, settings.guardSelfCheckInterval)
+   182→   631→            putBoolean(KEY_GUARD_ANTI_DEBUG, settings.guardAntiDebug)
+   183→   632→            putBoolean(KEY_GUARD_AUTO_RECOVERY, settings.guardAutoRecovery)
+   184→   633→            putInt(KEY_HIDE_STRATEGY, settings.hideStrategy.value)
+   185→   634→            putBoolean(KEY_HWID_SPOOF, settings.hwidSpoofEnabled)
+   186→   635→            putBoolean(KEY_BOOTLOADER_SPOOF, settings.bootloaderSpoofEnabled)
+   187→   636→            putBoolean(KEY_GAME_MODE, settings.gameModeEnabled)
+   188→   637→            putBoolean(KEY_GAME_MODE_AGGRESSIVE, settings.gameModeAggressive)
+   189→   638→            putBoolean(KEY_SANDBOX_AUTO_CREATE, settings.sandboxAutoCreate)
+   190→   639→            putBoolean(KEY_SANDBOX_CLEANUP, settings.sandboxCleanupOnExit)
+   191→   640→            putInt(KEY_CURE_DEFAULT_LEVEL, settings.cureDefaultLevel)
+   192→   641→            putBoolean(KEY_CURE_AUTO_FIX, settings.cureAutoFix)
+   193→   642→            putInt(KEY_THEME_MODE, settings.themeMode.value)
+   194→   643→            putInt(KEY_ACCENT_COLOR, settings.accentColor.value)
+   195→   644→            putBoolean(KEY_ANIMATIONS, settings.animationsEnabled)
+   196→   645→            putBoolean(KEY_LIQUID_GLASS, settings.liquidGlassEffect)
+   197→   646→            putBoolean(KEY_EBPF_FIREWALL, settings.ebpfFirewallEnabled)
+   198→   647→            putBoolean(KEY_FIREWALL_LOGGING, settings.firewallLogging)
+   199→   648→            putString(KEY_UPDATE_PROXY, settings.updateProxy)
+   200→   649→            putBoolean(KEY_NOTIFY_SCAN_COMPLETE, settings.notifyScanComplete)
+   201→   650→            putBoolean(KEY_NOTIFY_RISK_FOUND, settings.notifyRiskFound)
+   202→   651→            putBoolean(KEY_NOTIFY_GUARD_ALERT, settings.notifyGuardAlert)
+   203→   652→            putBoolean(KEY_NOTIFY_CURE_RESULT, settings.notifyCureResult)
+   204→   653→            putBoolean(KEY_NOTIFY_UPDATE_AVAILABLE, settings.notifyUpdateAvailable)
+   205→   654→            putBoolean(KEY_TELEMETRY, settings.telemetryEnabled)
+   206→   655→            putBoolean(KEY_CRASH_REPORTS, settings.crashReportsEnabled)
+   207→   656→            putBoolean(KEY_AUTO_CHECK_UPDATES, settings.autoCheckUpdates)
+   208→   657→            putInt(KEY_UPDATE_CHANNEL, settings.updateChannel.value)
+   209→   658→            putBoolean(KEY_WIFI_ONLY_UPDATE, settings.wifiOnlyUpdate)
+   210→   659→            putInt(KEY_SCAN_CONCURRENCY, settings.scanConcurrency)
+   211→   660→            putInt(KEY_CACHE_MAX_AGE, settings.cacheMaxAgeMinutes)
+   212→   661→            putBoolean(KEY_LOW_MEMORY_MODE, settings.lowMemoryMode)
+   213→   662→            putInt(KEY_LOG_LEVEL, settings.logLevel.value)
+   214→   663→            putInt(KEY_LOG_MAX_FILES, settings.logMaxFiles)
+   215→   664→            putBoolean(KEY_LOG_AUTO_CLEANUP, settings.logAutoCleanup)
+   216→   665→            putInt(KEY_SCHEDULE_TIME, settings.scheduleTime.value)
+   217→   666→            putInt(KEY_LANGUAGE, settings.language.value)
+   218→   667→            putBoolean(KEY_EXPERIMENTAL, settings.experimentalFeatures)
+   219→   668→            putInt(KEY_POWER_PROFILE, settings.powerProfile.value)
+   220→   669→            putBoolean(KEY_BATTERY_SAVER, settings.batterySaverEnabled)
+   221→   670→            putInt(KEY_IPC_TIMEOUT, settings.ipcTimeoutSeconds)
+   222→   671→            putInt(KEY_IPC_RETRY, settings.ipcRetryCount)
+   223→   672→            putString(KEY_IPC_SOCKET_PATH, settings.ipcSocketPath)
+   224→   673→            putBoolean(KEY_WATCHDOG_ENABLED, settings.watchdogEnabled)
+   225→   674→            putInt(KEY_WATCHDOG_INTERVAL, settings.watchdogIntervalSeconds)
+   226→   675→            putBoolean(KEY_WATCHDOG_AUTO_RESTART, settings.watchdogAutoRestart)
+   227→   676→            putInt(KEY_OBFUSCATION_LEVEL, settings.obfuscationLevel.value)
+   228→   677→            putBoolean(KEY_CPU_RANDOM_AFFINITY, settings.cpuRandomAffinity)
+   229→   678→            putString(KEY_WHITELIST_APPS, settings.whitelistApps)
+   230→   679→            putString(KEY_SCAN_EXCLUSIONS, settings.scanExclusions)
+   231→   680→            putString(KEY_CUSTOM_KEYWORDS, settings.customDetectionKeywords)
+   232→   681→            putString(KEY_CUSTOM_HIDE_PATHS, settings.customHidePaths)
+   233→   682→            putBoolean(KEY_VERIFY_BOOT, settings.verifyBootEnabled)
+   234→   683→            putBoolean(KEY_KEYSTORE_CHECK, settings.keystoreCheckEnabled)
+   235→   684→            putBoolean(KEY_SELINUX_ENFORCE, settings.selinuxEnforceCheck)
+   236→   685→            putString(KEY_CURRENT_PROFILE, settings.currentProfile)
+   237→   686→            putBoolean(KEY_STEALTH_HIDE_ICON, settings.stealthHideIcon)
+   238→   687→            putBoolean(KEY_STEALTH_HIDE_RECENT, settings.stealthHideRecent)
+   239→   688→            putBoolean(KEY_STEALTH_HIDE_NOTIFICATION, settings.stealthHideNotification)
+   240→   689→            putString(KEY_STEALTH_FAKE_APP_NAME, settings.stealthFakeAppName)
+   241→   690→            putBoolean(KEY_EMERGENCY_LOCK, settings.emergencyLockDevice)
+   242→   691→            putBoolean(KEY_EMERGENCY_WIPE, settings.emergencyWipeData)
+   243→   692→            putBoolean(KEY_EMERGENCY_SHUTDOWN, settings.emergencyShutdown)
+   244→   693→            putBoolean(KEY_EMERGENCY_NOTIFY, settings.emergencyNotifyContacts)
+   245→   694→            putBoolean(KEY_PMU_SPOOF, settings.pmuSpoofEnabled)
+   246→   695→            putBoolean(KEY_TIMING_SPOOF, settings.timingSpoofEnabled)
+   247→   696→            putBoolean(KEY_MEMORY_SPOOF, settings.memorySpoofEnabled)
+   248→   697→            putBoolean(KEY_SOUND_SCAN_COMPLETE, settings.soundScanComplete)
+   249→   698→            putBoolean(KEY_SOUND_RISK_ALERT, settings.soundRiskAlert)
+   250→   699→            putBoolean(KEY_SOUND_GUARD_ALERT, settings.soundGuardAlert)
+   251→   700→            putBoolean(KEY_HAPTIC_FEEDBACK, settings.hapticFeedback)
+   252→   701→            putBoolean(KEY_APP_LOCK_ENABLED, settings.appLockEnabled)
+   253→   702→            putString(KEY_APP_LOCK_PIN, settings.appLockPin)
+   254→   703→            putBoolean(KEY_APP_LOCK_BIOMETRIC, settings.appLockBiometric)
+   255→   704→            putBoolean(KEY_AUTO_EXPORT, settings.autoExportEnabled)
+   256→   705→            putString(KEY_EXPORT_FORMAT, settings.exportFormat)
+   257→   706→            putString(KEY_CUSTOM_ENCRYPTION_KEY, settings.customEncryptionKey)
+   258→   707→            putInt(KEY_KEY_ROTATION_HOURS, settings.keyRotationHours)
+   259→   708→            putBoolean(KEY_NETWORK_DNS_MONITOR, settings.networkDnsMonitor)
+   260→   709→            putBoolean(KEY_NETWORK_TRAFFIC_MONITOR, settings.networkTrafficMonitor)
+   261→   710→            putBoolean(KEY_KERNEL_MODULE_CHECK, settings.kernelModuleCheckEnabled)
+   262→   711→            putBoolean(KEY_AUTO_SILENCE_ON_GAME, settings.autoSilenceOnGame)
+   263→   712→            putBoolean(KEY_QUICK_SCAN_TOGGLE, settings.quickScanToggle)
+   264→   713→            putBoolean(KEY_FLOATING_WIDGET, settings.floatingWidget)
+   265→   714→            putBoolean(KEY_GESTURE_SHORTCUT, settings.gestureShortcut)
+   266→   715→            putBoolean(KEY_HOME_SCREEN_WIDGET, settings.homeScreenWidget)
+   267→   716→            putBoolean(KEY_AUTO_BACKUP, settings.autoBackupEnabled)
+   268→   717→            putInt(KEY_BACKUP_INTERVAL_DAYS, settings.backupIntervalDays)
+   269→   718→            putString(KEY_BACKUP_PATH, settings.backupPath)
+   270→   719→            putBoolean(KEY_CLOUD_SYNC, settings.cloudSyncEnabled)
+   271→   720→            putBoolean(KEY_USB_DETECTION_ALERT, settings.usbDetectionAlert)
+   272→   721→            putBoolean(KEY_WIFI_SECURITY_SCAN, settings.wifiSecurityScan)
+   273→   722→            putBoolean(KEY_BLE_SCAN, settings.bleScanEnabled)
+   274→   723→            putBoolean(KEY_UNTRUSTED_NETWORK_ALERT, settings.untrustedNetworkAlert)
+   275→   724→            putBoolean(KEY_TASKER_PLUGIN, settings.taskerPluginEnabled)
+   276→   725→            putString(KEY_WEBHOOK_URL, settings.webhookUrl)
+   277→   726→            putBoolean(KEY_INTENT_TRIGGER, settings.intentTriggerEnabled)
+   278→   727→            putBoolean(KEY_SMS_COMMANDS, settings.smsCommandsEnabled)
+   279→   728→            putBoolean(KEY_REMOTE_PAIRING, settings.remotePairingEnabled)
+   280→   729→            putBoolean(KEY_FCM_REMOTE_COMMANDS, settings.fcmRemoteCommands)
+   281→   730→            putString(KEY_PAIRING_CODE, settings.pairingCode)
+   282→   731→            putBoolean(KEY_AUTO_PAIR_TRUSTED, settings.autoPairTrusted)
+   283→   732→            putInt(KEY_FONT_SCALE, settings.fontScale)
+   284→   733→            putBoolean(KEY_COMPACT_MODE, settings.compactModeEnabled)
+   285→   734→            putBoolean(KEY_STATUS_BAR_INDICATOR, settings.statusBarIndicator)
+   286→   735→            putBoolean(KEY_FLOATING_WIDGET_ENABLED, settings.floatingWidgetEnabled)
+   287→   736→            putString(KEY_REPORT_STORAGE_PATH, settings.reportStoragePath)
+   288→   737→            putBoolean(KEY_CACHE_CLEANUP_ON_EXIT, settings.cacheCleanupOnExit)
+   289→   738→            putInt(KEY_MAX_CACHE_SIZE_MB, settings.maxCacheSizeMb)
+   290→   739→            putInt(KEY_BACKUP_RETENTION_DAYS, settings.backupRetentionDays)
+   291→   740→            putBoolean(KEY_ADB_MONITOR, settings.adbMonitorEnabled)
+   292→   741→            putBoolean(KEY_DEV_MODE_WARNING, settings.devModeWarning)
+   293→   742→            putBoolean(KEY_DEBUG_LOGGING, settings.debugLoggingEnabled)
+   294→   743→            putBoolean(KEY_MOCK_LOCATION_DETECTION, settings.mockLocationDetection)
+   295→   744→            putBoolean(KEY_FILE_INTEGRITY_CHECK, settings.fileIntegrityCheck)
+   296→   745→            putBoolean(KEY_INOTIFY_WATCH, settings.inotifyWatchEnabled)
+   297→   746→            putBoolean(KEY_SYSTEM_PARTITION_MONITOR, settings.systemPartitionMonitor)
+   298→   747→            putBoolean(KEY_CRITICAL_FILE_ALERT, settings.criticalFileAlert)
+   299→   748→            putBoolean(KEY_SUSPICIOUS_PROCESS_DETECT, settings.suspiciousProcessDetect)
+   300→   749→            putString(KEY_PROCESS_WHITELIST, settings.processWhitelist)
+   301→   750→            putBoolean(KEY_BG_PROCESS_MONITOR, settings.bgProcessMonitor)
+   302→   751→            putBoolean(KEY_PROCESS_ANOMALY_ALERT, settings.processAnomalyAlert)
+   303→   752→            putBoolean(KEY_BATTERY_WHITELIST, settings.batteryWhitelistEnabled)
+   304→   753→            putBoolean(KEY_DOZE_EXEMPT, settings.dozeExemptEnabled)
+   305→   754→            putBoolean(KEY_WAKE_LOCK_CONTROL, settings.wakeLockControl)
+   306→   755→            putBoolean(KEY_POWER_SAVE_OVERRIDE, settings.powerSaveOverride)
+   307→   756→            putBoolean(KEY_APP_PERMISSION_MONITOR, settings.appPermissionMonitor)
+   308→   757→            putBoolean(KEY_PERMISSION_CHANGE_ALERT, settings.permissionChangeAlert)
+   309→   758→            putBoolean(KEY_SUSPICIOUS_PERMISSION_DETECT, settings.suspiciousPermissionDetect)
+   310→   759→            putBoolean(KEY_RUNTIME_PERMISSION_AUDIT, settings.runtimePermissionAudit)
+   311→   760→            putBoolean(KEY_CAMERA_ACCESS_MONITOR, settings.cameraAccessMonitor)
+   312→   761→            putBoolean(KEY_MIC_ACCESS_MONITOR, settings.micAccessMonitor)
+   313→   762→            putBoolean(KEY_SENSOR_ACCESS_LOG, settings.sensorAccessLog)
+   314→   763→            putBoolean(KEY_CLIPBOARD_MONITOR, settings.clipboardMonitorEnabled)
+   315→   764→            putBoolean(KEY_AUDIT_TRAIL, settings.auditTrailEnabled)
+   316→   765→            putBoolean(KEY_COMPLIANCE_MODE, settings.complianceModeEnabled)
+   317→   766→            putInt(KEY_EVENT_RETENTION_DAYS, settings.eventRetentionDays)
+   318→   767→            putBoolean(KEY_AUDIT_EXPORT, settings.auditExportEnabled)
+   319→   768→            putBoolean(KEY_COMMUNITY_FORUM, settings.communityForum)
+   320→   769→            putBoolean(KEY_DISCORD_LINK, settings.discordLink)
+   321→   770→            putBoolean(KEY_TELEGRAM_BOT, settings.telegramBotEnabled)
+   322→   771→            putBoolean(KEY_GITHUB_INTEGRATION, settings.githubIntegration)
+   323→   772→            putBoolean(KEY_BETA_FEATURE_FLAGS, settings.betaFeatureFlags)
+   324→   773→            putBoolean(KEY_UNRELEASED_MOD, settings.unreleasedModEnabled)
+   325→   774→            putBoolean(KEY_ML_DETECTION, settings.mlDetectionEnabled)
+   326→   775→            putBoolean(KEY_EARLY_ACCESS, settings.earlyAccessProgram)
+   327→   776→            putString(KEY_SU_BINARY_PATH, settings.suBinaryPath)
+   328→   777→            putInt(KEY_ROOT_ACCESS_TIMEOUT, settings.rootAccessTimeout)
+   329→   778→            putBoolean(KEY_ROOT_PERMISSION_AUDIT, settings.rootPermissionAudit)
+   330→   779→            putBoolean(KEY_MULTI_USER_SUPPORT, settings.multiUserSupport)
+   331→   780→            putString(KEY_SELINUX_CONTEXT, settings.selinuxContext)
+   332→   781→            putBoolean(KEY_SELINUX_POLICY_CHECK, settings.selinuxPolicyCheck)
+   333→   782→            putBoolean(KEY_SELINUX_MODE_TOGGLE, settings.selinuxModeToggle)
+   334→   783→            putBoolean(KEY_CONTEXT_LABEL_VERIFY, settings.contextLabelVerify)
+   335→   784→            putBoolean(KEY_MOUNT_NS_ISOLATION, settings.mountNamespaceIsolation)
+   336→   785→            putBoolean(KEY_PID_NAMESPACE, settings.pidNamespace)
+   337→   786→            putBoolean(KEY_NETWORK_NAMESPACE, settings.networkNamespace)
+   338→   787→            putBoolean(KEY_IPC_NAMESPACE, settings.ipcNamespace)
+   339→   788→            putString(KEY_MODULE_LOAD_ORDER, settings.moduleLoadOrder)
+   340→   789→            putBoolean(KEY_MODULE_COMPAT_CHECK, settings.moduleCompatCheck)
+   341→   790→            putString(KEY_MODULE_UPDATE_POLICY, settings.moduleUpdatePolicy)
+   342→   791→            putString(KEY_MODULE_BLACKLIST, settings.moduleBlacklist)
+   343→   792→            putString(KEY_REPORT_DETAIL_LEVEL, settings.reportDetailLevel)
+   344→   793→            putString(KEY_REPORT_FORMAT_DETAILED, settings.reportFormatDetailed)
+   345→   794→            putBoolean(KEY_AUTO_REPORT_SHARE, settings.autoReportShare)
+   346→   795→            putBoolean(KEY_REPORT_ENCRYPTION, settings.reportEncryption)
+   347→   796→            putBoolean(KEY_SECURE_KEYBOARD, settings.secureKeyboard)
+   348→   797→            putBoolean(KEY_INPUT_OBFUSCATION, settings.inputObfuscation)
+   349→   798→            putBoolean(KEY_OVERLAY_PROTECTION, settings.overlayProtection)
+   350→   799→            putBoolean(KEY_KEYLOGGING_DETECT, settings.keyloggingDetect)
+   351→   800→            putBoolean(KEY_WIFI_HOTSPOT_DETECT, settings.wifiHotspotDetect)
+   352→   801→            putBoolean(KEY_BLUETOOTH_TETHER_ALERT, settings.bluetoothTetherAlert)
+   353→   802→            putBoolean(KEY_NFC_DETECTION, settings.nfcDetection)
+   354→   803→            putBoolean(KEY_AIRPLANE_MODE_BEHAVIOR, settings.airplaneModeBehavior)
+   355→   804→            putString(KEY_EMERGENCY_SMS_TEMPLATE, settings.emergencySmsTemplate)
+   356→   805→            putBoolean(KEY_EMERGENCY_CALL, settings.emergencyCall)
+   357→   806→            putBoolean(KEY_LOCATION_SHARING, settings.locationSharing)
+   358→   807→            putBoolean(KEY_HEARTBEAT_PING, settings.heartbeatPing)
+   359→   808→            putBoolean(KEY_PLAY_INTEGRITY, settings.playIntegrityCheck)
+   360→   809→            putBoolean(KEY_KEY_ATTESTATION, settings.keyAttestationEnabled)
+   361→   810→            putBoolean(KEY_CTS_PROFILE, settings.ctsProfileMatch)
+   362→   811→            putBoolean(KEY_BASIC_INTEGRITY, settings.basicIntegrity)
+   363→   812→            putBoolean(KEY_ALWAYS_ON_VPN, settings.alwaysOnVpn)
+   364→   813→            putBoolean(KEY_VPN_KILL_SWITCH, settings.vpnKillSwitch)
+   365→   814→            putBoolean(KEY_DNS_LEAK_PROTECTION, settings.dnsLeakProtection)
+   366→   815→            putBoolean(KEY_SPLIT_TUNNELING, settings.splitTunneling)
+   367→   816→            putString(KEY_VPN_PROXY_CONFIG, settings.vpnProxyConfig)
+   368→   817→            putBoolean(KEY_CERT_PINNING, settings.certPinningEnabled)
+   369→   818→            putString(KEY_SSL_VERIFICATION_LEVEL, settings.sslVerificationLevel)
+   370→   819→            putString(KEY_TRUSTED_CA_LIST, settings.trustedCaList)
+   371→   820→            putBoolean(KEY_CERT_TRANSPARENCY, settings.certTransparency)
+   372→   821→            putBoolean(KEY_MAGISK_VERSION_CHECK, settings.magiskVersionCheck)
+   373→   822→            putBoolean(KEY_MAGISK_MODULE_SCAN, settings.magiskModuleScan)
+   374→   823→            putBoolean(KEY_ZYGISK_DETECT, settings.zygiskDetect)
+   375→   824→            putString(KEY_MAGISK_HIDE_LIST, settings.magiskHideList)
+   376→   825→            putBoolean(KEY_XPOSED_DETECT, settings.xposedDetectEnabled)
+   377→   826→            putBoolean(KEY_XPOSED_MODULE_SCAN, settings.xposedModuleScan)
+   378→   827→            putBoolean(KEY_LSPOSED_DETECT, settings.lsposedDetectEnabled)
+   379→   828→            putBoolean(KEY_RIRU_DETECT, settings.riruDetectEnabled)
+   380→   829→            putString(KEY_CUSTOM_INIT_SCRIPTS, settings.customInitScripts)
+   381→   830→            putString(KEY_POST_BOOT_SCRIPTS, settings.postBootScripts)
+   382→   831→            putBoolean(KEY_SCRIPT_SCHEDULE, settings.scriptRunOnSchedule)
+   383→   832→            putBoolean(KEY_SCRIPT_LOG_OUTPUT, settings.scriptLogOutput)
+   384→   833→            putBoolean(KEY_HARDWARE_ATTESTATION, settings.hardwareAttestation)
+   385→   834→            putBoolean(KEY_TEE_CHECK, settings.teeCheckEnabled)
+   386→   835→            putBoolean(KEY_SECURE_ELEMENT, settings.secureElementCheck)
+   387→   836→            putBoolean(KEY_FINGERPRINT_HARDWARE, settings.fingerprintHardwareCheck)
+   388→   837→            putBoolean(KEY_DM_VERITY, settings.dmVerityCheck)
+   389→   838→            putBoolean(KEY_AVB, settings.avbCheck)
+   390→   839→            putBoolean(KEY_SYSTEM_PARTITION_RO, settings.systemPartitionRo)
+   391→   840→            putBoolean(KEY_VBMETA, settings.vbmetaCheck)
+   392→   841→            putBoolean(KEY_SCREEN_RECORD_DETECT, settings.screenRecordDetect)
+   393→   842→            putBoolean(KEY_VPN_DETECT_ENABLED, settings.vpnDetectEnabled)
+   394→   843→            putBoolean(KEY_SCREENSHOT_BLOCK, settings.screenshotBlock)
+   395→   844→            putBoolean(KEY_DNS_OVER_HTTPS, settings.dnsOverHttps)
+   396→   845→            putString(KEY_DNS_OVER_HTTPS_PROVIDER, settings.dnsOverHttpsProvider)
+   397→   846→            putBoolean(KEY_ARP_SPOOF_DETECT, settings.arpSpoofDetect)
+   398→   847→            putBoolean(KEY_MAC_RANDOMIZATION, settings.macRandomization)
+   399→   848→        }
+   400→   849→    }
+   401→   850→
+   402→   851→    companion object {
+   403→   852→        private const val KEY_DETECTION_LEVEL = "detection_level"
+   404→   853→        private const val KEY_AUTO_SCAN = "auto_scan"
+   405→   854→        private const val KEY_AUTO_SCAN_INTERVAL = "auto_scan_interval"
+   406→   855→        private const val KEY_RISK_NOTIFICATION = "risk_notification"
+   407→   856→        private const val KEY_RISK_THRESHOLD = "risk_threshold"
+   408→   857→        private const val KEY_PLUGIN_L1 = "plugin_l1"
+   409→   858→        private const val KEY_PLUGIN_L2 = "plugin_l2"
+   410→   859→        private const val KEY_PLUGIN_L3 = "plugin_l3"
+   411→   860→        private const val KEY_PLUGIN_L4 = "plugin_l4"
+   412→   861→        private const val KEY_PLUGIN_L5 = "plugin_l5"
+   413→   862→        private const val KEY_PLUGIN_L6 = "plugin_l6"
+   414→   863→        private const val KEY_PLUGIN_L7 = "plugin_l7"
+   415→   864→        private const val KEY_GUARD_ENABLED = "guard_enabled"
+   416→   865→        private const val KEY_GUARD_LEVEL = "guard_level"
+   417→   866→        private const val KEY_GUARD_SELF_CHECK_INTERVAL = "guard_self_check_interval"
+   418→   867→        private const val KEY_GUARD_ANTI_DEBUG = "guard_anti_debug"
+   419→   868→        private const val KEY_GUARD_AUTO_RECOVERY = "guard_auto_recovery"
+   420→   869→        private const val KEY_HIDE_STRATEGY = "hide_strategy"
+   421→   870→        private const val KEY_HWID_SPOOF = "hwid_spoof"
+   422→   871→        private const val KEY_BOOTLOADER_SPOOF = "bootloader_spoof"
+   423→   872→        private const val KEY_GAME_MODE = "game_mode"
+   424→   873→        private const val KEY_GAME_MODE_AGGRESSIVE = "game_mode_aggressive"
+   425→   874→        private const val KEY_SANDBOX_AUTO_CREATE = "sandbox_auto_create"
+   426→   875→        private const val KEY_SANDBOX_CLEANUP = "sandbox_cleanup"
+   427→   876→        private const val KEY_CURE_DEFAULT_LEVEL = "cure_default_level"
+   428→   877→        private const val KEY_CURE_AUTO_FIX = "cure_auto_fix"
+   429→   878→        private const val KEY_THEME_MODE = "theme_mode"
+   430→   879→        private const val KEY_ACCENT_COLOR = "accent_color"
+   431→   880→        private const val KEY_ANIMATIONS = "animations"
+   432→   881→        private const val KEY_LIQUID_GLASS = "liquid_glass"
+   433→   882→        private const val KEY_EBPF_FIREWALL = "ebpf_firewall"
+   434→   883→        private const val KEY_FIREWALL_LOGGING = "firewall_logging"
+   435→   884→        private const val KEY_UPDATE_PROXY = "update_proxy"
+   436→   885→        private const val KEY_NOTIFY_SCAN_COMPLETE = "notify_scan_complete"
+   437→   886→        private const val KEY_NOTIFY_RISK_FOUND = "notify_risk_found"
+   438→   887→        private const val KEY_NOTIFY_GUARD_ALERT = "notify_guard_alert"
+   439→   888→        private const val KEY_NOTIFY_CURE_RESULT = "notify_cure_result"
+   440→   889→        private const val KEY_NOTIFY_UPDATE_AVAILABLE = "notify_update_available"
+   441→   890→        private const val KEY_TELEMETRY = "telemetry"
+   442→   891→        private const val KEY_CRASH_REPORTS = "crash_reports"
+   443→   892→        private const val KEY_AUTO_CHECK_UPDATES = "auto_check_updates"
+   444→   893→        private const val KEY_UPDATE_CHANNEL = "update_channel"
+   445→   894→        private const val KEY_WIFI_ONLY_UPDATE = "wifi_only_update"
+   446→   895→        private const val KEY_SCAN_CONCURRENCY = "scan_concurrency"
+   447→   896→        private const val KEY_CACHE_MAX_AGE = "cache_max_age"
+   448→   897→        private const val KEY_LOW_MEMORY_MODE = "low_memory_mode"
+   449→   898→        private const val KEY_LOG_LEVEL = "log_level"
+   450→   899→        private const val KEY_LOG_MAX_FILES = "log_max_files"
+   451→
+   452→[showing lines 450-899 of 1088; use offset=900 with limit to continue reading]
