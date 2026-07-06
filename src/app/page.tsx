@@ -147,9 +147,12 @@ const FEATURES = [
 // ═══ 开场动画 ═══
 
 function IntroAnimation({ onComplete }: { onComplete: () => void }) {
-  const [phase, setPhase] = useState(0)
+  // 初始 phase=-1 表示"未挂载"，不渲染任何内容
+  // 避免 SSR 输出 opacity:1 的覆盖层导致白屏
+  const [phase, setPhase] = useState(-1)
 
   useEffect(() => {
+    // 仅在客户端执行，phase 从 -1 → 1 → 2 → 3
     const timers = [
       setTimeout(() => setPhase(1), 50),
       setTimeout(() => setPhase(2), 700),
@@ -158,6 +161,9 @@ function IntroAnimation({ onComplete }: { onComplete: () => void }) {
     ]
     return () => timers.forEach(clearTimeout)
   }, [onComplete])
+
+  // phase <= 0 时完全不渲染（SSR 时不会输出覆盖层，避免白屏）
+  if (phase <= 0) return null
 
   return (
     <div
