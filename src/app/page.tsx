@@ -11,7 +11,8 @@ import {
   Gamepad2, Download, Github, AlertTriangle, CheckCircle2, XCircle,
   Loader2, Activity, Fingerprint, Skull, Sparkles, Flame,
   Play, RotateCcw, Trophy, Layers as LayersIcon, Power, Wifi,
-  HardDrive, MemoryStick, Network, Crosshair
+  HardDrive, MemoryStick, Network, Crosshair, MousePointerClick,
+  Gauge, Swords, Target, TrendingUp, Zap as ZapIcon, Crown
 } from 'lucide-react'
 
 // ═══ 数据 ═══
@@ -143,6 +144,400 @@ const FEATURES = [
   { icon: Cpu, title: '微服务架构', desc: '20 个独立插件', color: '#a855f7' },
   { icon: Terminal, title: '原生引擎', desc: 'C++20 + ARM64 裸 syscall', color: '#ef4444' },
 ]
+
+// ═══ 威胁猎手游戏数据 ═══
+
+const THREATS = [
+  { id: 'magisk', name: 'Magisk', icon: Flame, color: '#ef4444', layer: 'L8', desc: '主流 Root 框架' },
+  { id: 'frida', name: 'Frida', icon: Bug, color: '#06b6d4', layer: 'L2', desc: '动态注入工具' },
+  { id: 'ksu', name: 'KernelSU', icon: Cpu, color: '#22c55e', layer: 'L9', desc: '内核级 Root' },
+  { id: 'shamiko', name: 'Shamiko', icon: EyeOff, color: '#a855f7', layer: 'L16', desc: '隐藏模块' },
+  { id: 'xposed', name: 'Xposed', icon: Bug, color: '#eab308', layer: 'L11', desc: 'Hook 框架' },
+  { id: 'gg', name: 'GameGuardian', icon: AlertTriangle, color: '#ef4444', layer: 'L15', desc: '内存修改器' },
+  { id: 'zygisk', name: 'Zygisk', icon: Cpu, color: '#06b6d4', layer: 'L16', desc: 'Zygote 注入' },
+  { id: 'apatch', name: 'APatch', icon: Cpu, color: '#a855f7', layer: 'L10', desc: 'KPM Root' },
+]
+
+const SAFE_ITEMS = [
+  { id: 'system', name: 'System Server', icon: Shield, color: '#22c55e' },
+  { id: 'play', name: 'Play Services', icon: Shield, color: '#22c55e' },
+  { id: 'launcher', name: 'Launcher', icon: Shield, color: '#22c55e' },
+  { id: 'keyboard', name: 'Input Method', icon: Shield, color: '#22c55e' },
+]
+
+// ═══ 3D 盾牌组件 ═══
+
+function Shield3D({ scanning }: { scanning: boolean }) {
+  const [rotation, setRotation] = useState({ x: 0, y: 0 })
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!scanning) return
+    const interval = setInterval(() => {
+      setRotation({
+        x: Math.sin(Date.now() / 1000) * 15,
+        y: Math.cos(Date.now() / 1500) * 20,
+      })
+    }, 50)
+    return () => clearInterval(interval)
+  }, [scanning])
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-32 h-32 mx-auto"
+      style={{ perspective: '600px' }}
+    >
+      <motion.div
+        className="w-full h-full relative"
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
+        }}
+        animate={scanning ? {} : { rotateY: [0, 5, -5, 0] }}
+        transition={scanning ? {} : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        {/* 盾牌外层光晕 */}
+        <div
+          className="absolute inset-0 rounded-3xl"
+          style={{
+            background: 'radial-gradient(circle, rgba(168,85,247,0.3) 0%, transparent 70%)',
+            transform: 'translateZ(-20px)',
+          }}
+        />
+        {/* 盾牌主体 */}
+        <div
+          className="absolute inset-2 rounded-2xl flex items-center justify-center"
+          style={{
+            background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(6,182,212,0.1))',
+            border: '2px solid rgba(168,85,247,0.4)',
+            boxShadow: '0 0 30px rgba(168,85,247,0.2), inset 0 0 20px rgba(168,85,247,0.1)',
+            transform: 'translateZ(20px)',
+          }}
+        >
+          <Shield
+            className="w-16 h-16"
+            style={{
+              color: scanning ? '#a855f7' : '#926fff',
+              filter: scanning ? 'drop-shadow(0 0 12px #a855f7)' : 'drop-shadow(0 0 6px #926fff)',
+            }}
+          />
+        </div>
+        {/* 扫描时显示旋转环 */}
+        {scanning && (
+          <div
+            className="absolute inset-0 rounded-full border-2 border-primary/40"
+            style={{
+              transform: 'translateZ(40px)',
+              animation: 'radar-sweep 2s linear infinite',
+            }}
+          />
+        )}
+      </motion.div>
+    </div>
+  )
+}
+
+// ═══ 威胁猎手游戏 ═══
+
+function ThreatHunterGame({ onScore }: { onScore: (score: number) => void }) {
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'over'>('idle')
+  const [score, setScore] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(30)
+  const [items, setItems] = useState<{ id: string; name: string; icon: any; color: string; isThreat: boolean; x: number; y: number; layer?: string }[]>([])
+  const [combo, setCombo] = useState(0)
+  const [bestCombo, setBestCombo] = useState(0)
+  const intervalsRef = useRef<{ spawn?: ReturnType<typeof setInterval>; timer?: ReturnType<typeof setInterval> }>({})
+
+  const startGame = () => {
+    setScore(0)
+    setTimeLeft(30)
+    setCombo(0)
+    setBestCombo(0)
+    setItems([])
+    setGameState('playing')
+  }
+
+  useEffect(() => {
+    if (gameState !== 'playing') return
+
+    // 生成物品
+    intervalsRef.current.spawn = setInterval(() => {
+      const isThreat = Math.random() > 0.35
+      const pool = isThreat ? THREATS : SAFE_ITEMS
+      const item = pool[Math.floor(Math.random() * pool.length)]
+      const newItem = {
+        ...item,
+        isThreat,
+        x: 5 + Math.random() * 85,
+        y: 5 + Math.random() * 75,
+      }
+      setItems(prev => [...prev.slice(-5), newItem])
+      // 3秒后自动消失
+      setTimeout(() => {
+        setItems(prev => prev.filter(i => i !== newItem))
+      }, 2500)
+    }, 700)
+
+    // 倒计时
+    intervalsRef.current.timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          setGameState('over')
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (intervalsRef.current.spawn) clearInterval(intervalsRef.current.spawn)
+      if (intervalsRef.current.timer) clearInterval(intervalsRef.current.timer)
+    }
+  }, [gameState])
+
+  const handleClick = (item: { id: string; isThreat: boolean; x: number }) => {
+    if (item.isThreat) {
+      const newCombo = combo + 1
+      const points = 10 + newCombo * 2
+      setScore(s => s + points)
+      setCombo(newCombo)
+      setBestCombo(b => Math.max(b, newCombo))
+    } else {
+      setScore(s => Math.max(0, s - 15))
+      setCombo(0)
+    }
+    setItems(prev => prev.filter(i => i.x !== item.x))
+  }
+
+  useEffect(() => {
+    if (gameState === 'over') {
+      onScore(score)
+    }
+  }, [gameState, score, onScore])
+
+  if (gameState === 'idle') {
+    return (
+      <div className="text-center py-8">
+        <Swords className="w-12 h-12 mx-auto mb-4 text-primary" />
+        <h4 className="text-xl font-bold mb-2">威胁猎手</h4>
+        <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+          30 秒内点击所有威胁（红色），避开安全进程（绿色）。连击得分翻倍！
+        </p>
+        <Button onClick={startGame} size="lg">
+          <Swords className="w-5 h-5 mr-2" />开始游戏
+        </Button>
+      </div>
+    )
+  }
+
+  if (gameState === 'over') {
+    return (
+      <div className="text-center py-8">
+        <Trophy className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+        <h4 className="text-2xl font-black mb-2">游戏结束</h4>
+        <div className="flex justify-center gap-6 mb-4">
+          <div>
+            <div className="text-3xl font-black gradient-text">{score}</div>
+            <div className="text-xs text-muted-foreground">总分</div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-yellow-400">{bestCombo}</div>
+            <div className="text-xs text-muted-foreground">最高连击</div>
+          </div>
+        </div>
+        <Button onClick={startGame} variant="outline">
+          <RotateCcw className="w-4 h-4 mr-2" />再玩一次
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {/* HUD */}
+      <div className="flex items-center justify-between mb-3 px-2">
+        <div className="flex items-center gap-3">
+          <Badge className="bg-primary/20 text-primary border-primary/30">
+            <Target className="w-3 h-3 mr-1" /> {score}
+          </Badge>
+          {combo > 1 && (
+            <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+              <Zap className="w-3 h-3 mr-1" /> {combo}x 连击
+            </Badge>
+          )}
+        </div>
+        <Badge variant={timeLeft <= 10 ? 'destructive' : 'secondary'} className="font-mono">
+          {timeLeft}s
+        </Badge>
+      </div>
+
+      {/* 游戏区域 */}
+      <div className="relative w-full h-64 rounded-xl overflow-hidden border border-border/50 bg-black/30 grid-bg">
+        {items.map((item, i) => (
+          <motion.button
+            key={`${item.id}-${i}`}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            onClick={() => handleClick(item)}
+            className="absolute w-12 h-12 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+            style={{
+              left: `${item.x}%`,
+              top: `${item.y}%`,
+              background: `${item.color}25`,
+              border: `1px solid ${item.color}60`,
+            }}
+          >
+            <item.icon className="w-5 h-5" style={{ color: item.color }} />
+            <span className="text-[8px] mt-0.5" style={{ color: item.color }}>{item.name.substring(0, 6)}</span>
+          </motion.button>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground text-center mt-2">
+        <span className="text-red-400">红色 = 威胁（+10分）</span>
+        {' · '}
+        <span className="text-green-400">绿色 = 安全（-15分）</span>
+      </p>
+    </div>
+  )
+}
+
+// ═══ 实时威胁地图 ═══
+
+function ThreatMap() {
+  const [threats, setThreats] = useState<{ x: number; y: number; type: string; age: number }[]>([])
+
+  useEffect(() => {
+    const types = ['Magisk', 'Frida', 'KSU', 'Shamiko', 'Xposed', 'Zygisk']
+    const interval = setInterval(() => {
+      setThreats(prev => {
+        const newThreat = {
+          x: Math.random() * 90 + 5,
+          y: Math.random() * 90 + 5,
+          type: types[Math.floor(Math.random() * types.length)],
+          age: 0,
+        }
+        return [...prev.slice(-8), newThreat].map(t => ({ ...t, age: t.age + 1 }))
+      })
+    }, 1500)
+    return () => clearInterval(interval)
+  }, [])
+
+  const colorMap: Record<string, string> = {
+    Magisk: '#ef4444', Frida: '#06b6d4', KSU: '#22c55e',
+    Shamiko: '#a855f7', Xposed: '#eab308', Zygisk: '#06b6d4',
+  }
+
+  return (
+    <Card className="glass-card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="font-bold text-sm flex items-center gap-2">
+          <Network className="w-4 h-4 text-primary" />
+          全球威胁地图
+        </h4>
+        <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1" />
+          LIVE
+        </Badge>
+      </div>
+      <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border/30 bg-black/40 grid-bg">
+        {/* 地图上的威胁点 */}
+        {threats.map((t, i) => (
+          <motion.div
+            key={i}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: Math.max(0.3, 1 - t.age * 0.15) }}
+            className="absolute"
+            style={{ left: `${t.x}%`, top: `${t.y}%`, transform: 'translate(-50%, -50%)' }}
+          >
+            <div className="relative">
+              <div
+                className="w-2 h-2 rounded-full"
+                style={{ background: colorMap[t.type] || '#a855f7', boxShadow: `0 0 8px ${colorMap[t.type] || '#a855f7'}` }}
+              />
+              <div
+                className="absolute inset-0 rounded-full animate-ping"
+                style={{ background: colorMap[t.type] || '#a855f7', opacity: 0.4 }}
+              />
+              <span className="absolute top-3 left-3 text-[8px] font-mono whitespace-nowrap" style={{ color: colorMap[t.type] || '#a855f7' }}>
+                {t.type}
+              </span>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-1 mt-2">
+        {Object.entries(colorMap).map(([type, color]) => (
+          <span key={type} className="text-[10px] font-mono flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+            {type}
+          </span>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// ═══ 实时统计仪表盘 ═══
+
+function LiveStats({ scanCount }: { scanCount: number }) {
+  const [stats, setStats] = useState({ cpu: 45, mem: 62, net: 30, eBPF: 78 })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStats({
+        cpu: 30 + Math.random() * 50,
+        mem: 50 + Math.random() * 30,
+        net: 10 + Math.random() * 60,
+        eBPF: 70 + Math.random() * 25,
+      })
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const gauges = [
+    { label: 'CPU', value: stats.cpu, color: '#a855f7', icon: Cpu },
+    { label: '内存', value: stats.mem, color: '#06b6d4', icon: MemoryStick },
+    { label: '网络', value: stats.net, color: '#22c55e', icon: Wifi },
+    { label: 'eBPF', value: stats.eBPF, color: '#eab308', icon: Zap },
+  ]
+
+  return (
+    <Card className="glass-card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="font-bold text-sm flex items-center gap-2">
+          <Activity className="w-4 h-4 text-primary" />
+          引擎实时状态
+        </h4>
+        <span className="text-[10px] text-muted-foreground font-mono">{scanCount} 次扫描</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {gauges.map(g => (
+          <div key={g.label}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <g.icon className="w-3 h-3" style={{ color: g.color }} />
+                {g.label}
+              </span>
+              <span className="text-xs font-mono font-bold" style={{ color: g.color }}>
+                {g.value.toFixed(0)}%
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-border/30 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full"
+                style={{ background: g.color }}
+                animate={{ width: `${g.value}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
 
 // ═══ 开场动画 ═══
 
@@ -297,7 +692,7 @@ function ParticleBackground() {
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(true)
-  const [section, setSection] = useState<'hero' | 'scanner' | 'layers' | 'features' | 'download'>('hero')
+  const [section, setSection] = useState<'hero' | 'scanner' | 'layers' | 'features' | 'download' | 'playground'>('hero')
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done'>('idle')
   const [scanMode, setScanMode] = useState<string>('quick')
   const [scanProgress, setScanProgress] = useState(0)
@@ -307,6 +702,7 @@ export default function Home() {
   const [scanCount, setScanCount] = useState(0)
   const [achievements, setAchievements] = useState<string[]>([])
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
+  const [gameHighScore, setGameHighScore] = useState(0)
   const intervalsRef = useRef<{ log?: ReturnType<typeof setInterval>; progress?: ReturnType<typeof setInterval> }>({})
 
   useEffect(() => {
@@ -417,6 +813,7 @@ export default function Home() {
             {[
               { id: 'hero', label: '首页', icon: Play },
               { id: 'scanner', label: '检测台', icon: Radar },
+              { id: 'playground', label: '游乐场', icon: Gamepad2 },
               { id: 'layers', label: '检测层', icon: LayersIcon },
               { id: 'features', label: '功能', icon: Sparkles },
               { id: 'download', label: '下载', icon: Download },
@@ -474,6 +871,86 @@ export default function Home() {
                   ))}
                 </motion.div>
               )}
+            </motion.div>
+          )}
+
+          {/* ═══ Playground ═══ */}
+          {section === 'playground' && (
+            <motion.div key="playground" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-black mb-2 gradient-text">互动游乐场</h2>
+                <p className="text-muted-foreground text-sm">玩游戏 · 看实时数据 · 探索检测引擎</p>
+              </div>
+
+              {/* 3D 盾牌 */}
+              <Card className="glass-card p-6 mb-6">
+                <div className="grid md:grid-cols-2 gap-6 items-center">
+                  <div>
+                    <Shield3D scanning={scanState === 'scanning'} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-primary" />
+                      APEX 盾牌引擎
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      3D 渲染的安全盾牌，扫描时自动旋转并发光。代表 APEX-Root 的核心防护能力。
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="glass-card rounded-xl p-3 text-center">
+                        <div className="text-2xl font-black gradient-text">16</div>
+                        <div className="text-xs text-muted-foreground">检测层</div>
+                      </div>
+                      <div className="glass-card rounded-xl p-3 text-center">
+                        <div className="text-2xl font-black text-green-400">100%</div>
+                        <div className="text-xs text-muted-foreground">覆盖率</div>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full mt-4"
+                      onClick={() => { setSection('scanner'); setTimeout(() => startScan('deep'), 400) }}
+                    >
+                      <Zap className="w-4 h-4 mr-2" />启动深度扫描激活盾牌
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* 威胁猎手游戏 */}
+              <Card className="glass-card p-6 mb-6">
+                <ThreatHunterGame onScore={(s) => setGameHighScore(prev => Math.max(prev, s))} />
+                {gameHighScore > 0 && (
+                  <div className="text-center mt-4 pt-4 border-t border-border/30">
+                    <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                      <Crown className="w-3 h-3 mr-1" />最高分: {gameHighScore}
+                    </Badge>
+                  </div>
+                )}
+              </Card>
+
+              {/* 实时威胁地图 + 引擎状态 */}
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <ThreatMap />
+                <LiveStats scanCount={scanCount} />
+              </div>
+
+              {/* 威胁百科 */}
+              <Card className="glass-card p-6">
+                <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                  <Fingerprint className="w-5 h-5 text-primary" />
+                  威胁百科
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {THREATS.map(threat => (
+                    <div key={threat.id} className="glass-card rounded-xl p-3 hover:scale-105 transition-transform cursor-pointer">
+                      <threat.icon className="w-8 h-8 mb-2" style={{ color: threat.color }} />
+                      <div className="font-bold text-sm">{threat.name}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{threat.desc}</div>
+                      <Badge variant="outline" className="text-[9px] mt-2 py-0">{threat.layer}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </Card>
             </motion.div>
           )}
 
