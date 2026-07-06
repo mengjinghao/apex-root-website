@@ -539,63 +539,188 @@ function LiveStats({ scanCount }: { scanCount: number }) {
   )
 }
 
-// ═══ 开场动画 ═══
+// ═══ 开场动画 — 绚丽版 ═══
 
 function IntroAnimation({ onComplete }: { onComplete: () => void }) {
-  // 初始 phase=-1 表示"未挂载"，不渲染任何内容
-  // 避免 SSR 输出 opacity:1 的覆盖层导致白屏
   const [phase, setPhase] = useState(-1)
 
   useEffect(() => {
-    // 仅在客户端执行，phase 从 -1 → 1 → 2 → 3
     const timers = [
-      setTimeout(() => setPhase(1), 50),
-      setTimeout(() => setPhase(2), 700),
-      setTimeout(() => setPhase(3), 2200),
-      setTimeout(() => onComplete(), 2900),
+      setTimeout(() => setPhase(0), 50),   // 背景脉冲 + 扫描线
+      setTimeout(() => setPhase(1), 200),  // 三层光环 + 盾牌
+      setTimeout(() => setPhase(2), 900),  // 粒子爆发
+      setTimeout(() => setPhase(3), 1200), // 文字揭示
+      setTimeout(() => setPhase(4), 2000), // 副标题 + 加载条
+      setTimeout(() => setPhase(5), 3000), // 开始淡出
+      setTimeout(() => onComplete(), 3700),
     ]
     return () => timers.forEach(clearTimeout)
   }, [onComplete])
 
-  // phase <= 0 时完全不渲染（SSR 时不会输出覆盖层，避免白屏）
-  if (phase <= 0) return null
+  if (phase < 0) return null
+
+  // 粒子爆发：12 个粒子向四面八方飞散
+  const particles = Array.from({ length: 12 }, (_, i) => {
+    const angle = (i / 12) * 360
+    const dist = 80 + Math.random() * 60
+    return {
+      tx: Math.cos((angle * Math.PI) / 180) * dist,
+      ty: Math.sin((angle * Math.PI) / 180) * dist,
+      delay: i * 0.02,
+      color: ['#a855f7', '#06b6d4', '#22c55e', '#eab308'][i % 4],
+    }
+  })
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
       style={{
-        opacity: phase >= 3 ? 0 : 1,
+        backgroundColor: '#0a0810',
+        opacity: phase >= 5 ? 0 : 1,
         transition: 'opacity 0.7s ease-out',
-        pointerEvents: phase >= 3 ? 'none' : 'auto',
+        pointerEvents: phase >= 5 ? 'none' : 'auto',
       }}
     >
+      {/* 背景脉冲光 */}
+      {phase >= 0 && (
+        <div
+          className="absolute inset-0"
+          style={{ animation: 'intro-bg-pulse 2s ease-in-out forwards' }}
+        />
+      )}
+
+      {/* 网格闪烁 */}
+      {phase >= 0 && (
+        <div
+          className="absolute inset-0 grid-bg"
+          style={{ animation: 'intro-grid-flash 1s ease-in-out' }}
+        />
+      )}
+
+      {/* 扫描线（从上到下扫过） */}
+      {phase >= 0 && phase < 4 && (
+        <div
+          className="absolute inset-x-0 h-32"
+          style={{
+            background: 'linear-gradient(180deg, transparent 0%, rgba(168,85,247,0.4) 50%, transparent 100%)',
+            animation: 'intro-scan-sweep 1.5s ease-in-out forwards',
+          }}
+        />
+      )}
+
+      {/* 四角线条装饰 */}
       {phase >= 1 && (
         <>
-          <div className="absolute w-28 h-28 rounded-full border-2 border-primary" style={{ animation: 'intro-ring-expand 1.5s ease-out forwards' }} />
-          <div className="absolute w-28 h-28 rounded-full border-2 border-primary" style={{ animation: 'intro-ring-expand 1.5s ease-out 0.3s forwards' }} />
+          <div className="absolute top-8 left-8 border-t-2 border-l-2 border-primary/40 rounded-tl-lg" style={{ '--line-w': '60px', '--line-h': '60px', width: '60px', height: '60px', animation: 'intro-corner-line 0.5s ease-out forwards' } as React.CSSProperties} />
+          <div className="absolute top-8 right-8 border-t-2 border-r-2 border-primary/40 rounded-tr-lg" style={{ '--line-w': '60px', '--line-h': '60px', width: '60px', height: '60px', animation: 'intro-corner-line 0.5s ease-out 0.1s forwards' } as React.CSSProperties} />
+          <div className="absolute bottom-8 left-8 border-b-2 border-l-2 border-primary/40 rounded-bl-lg" style={{ '--line-w': '60px', '--line-h': '60px', width: '60px', height: '60px', animation: 'intro-corner-line 0.5s ease-out 0.15s forwards' } as React.CSSProperties} />
+          <div className="absolute bottom-8 right-8 border-b-2 border-r-2 border-primary/40 rounded-br-lg" style={{ '--line-w': '60px', '--line-h': '60px', width: '60px', height: '60px', animation: 'intro-corner-line 0.5s ease-out 0.2s forwards' } as React.CSSProperties} />
         </>
       )}
+
+      {/* 三层扩散光环 */}
+      {phase >= 1 && (
+        <>
+          <div className="absolute w-24 h-24 rounded-full border-2 border-primary" style={{ animation: 'intro-ring-expand 1.5s ease-out forwards' }} />
+          <div className="absolute w-24 h-24 rounded-full border-2 border-cyan-400" style={{ animation: 'intro-ring-expand-2 1.5s ease-out 0.2s forwards' }} />
+          <div className="absolute w-24 h-24 rounded-full border-2 border-green-400" style={{ animation: 'intro-ring-expand-3 1.5s ease-out 0.4s forwards' }} />
+        </>
+      )}
+
+      {/* 粒子爆发 */}
+      {phase >= 2 && (
+        <>
+          {particles.map((p, i) => (
+            <div
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full"
+              style={{
+                '--tx': `${p.tx}px`,
+                '--ty': `${p.ty}px`,
+                background: p.color,
+                boxShadow: `0 0 6px ${p.color}`,
+                animation: `intro-particle-burst 0.8s ease-out ${p.delay}s forwards`,
+              } as React.CSSProperties}
+            />
+          ))}
+        </>
+      )}
+
+      {/* 中心内容 */}
       <div className="relative flex flex-col items-center">
+        {/* 盾牌 */}
         {phase >= 1 && (
-          <div className="relative w-20 h-20 mb-6" style={{ animation: 'intro-zoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
-            <div className="absolute inset-0 rounded-3xl bg-primary/20" style={{ animation: 'pulse-glow 2s ease-in-out infinite' }} />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Shield className="w-10 h-10 text-primary" />
+          <div className="relative w-24 h-24 mb-8" style={{ animation: 'intro-zoom 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' }}>
+            {/* 盾牌外层光晕 */}
+            <div
+              className="absolute inset-0 rounded-3xl"
+              style={{
+                background: 'radial-gradient(circle, rgba(168,85,247,0.4) 0%, transparent 70%)',
+                animation: 'intro-shield-glow 1.5s ease-out forwards',
+              }}
+            />
+            {/* 盾牌主体 */}
+            <div
+              className="absolute inset-2 rounded-2xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(6,182,212,0.15))',
+                border: '2px solid rgba(168,85,247,0.5)',
+                animation: 'intro-shield-glow 1.5s ease-out forwards',
+              }}
+            >
+              <Shield
+                className="w-12 h-12"
+                style={{ color: '#a855f7', filter: 'drop-shadow(0 0 8px #a855f7)' }}
+              />
             </div>
           </div>
         )}
-        {phase >= 2 && (
+
+        {/* 主标题 */}
+        {phase >= 3 && (
           <div className="text-center" style={{ animation: 'intro-text-reveal 0.8s ease-out forwards' }}>
-            <h1 className="text-4xl font-black gradient-text mb-1">APEX-Root</h1>
+            <h1 className="text-5xl font-black gradient-text mb-2">APEX-Root</h1>
             <p className="text-xs text-muted-foreground font-mono tracking-[0.3em]">16-LAYER DETECTION</p>
           </div>
         )}
-      </div>
-      {phase >= 2 && (
-        <div className="absolute bottom-16 w-56">
-          <div className="h-0.5 bg-border rounded-full overflow-hidden">
-            <motion.div className="h-full bg-primary" initial={{ width: '0%' }} animate={{ width: '100%' }} transition={{ duration: 1.5, ease: 'easeInOut' }} />
+
+        {/* 副标题 */}
+        {phase >= 4 && (
+          <div className="text-center mt-3" style={{ animation: 'intro-subtitle-reveal 0.6s ease-out forwards' }}>
+            <p className="text-[10px] text-muted-foreground/60 font-mono">
+              INITIALIZING ENGINE...
+            </p>
           </div>
+        )}
+      </div>
+
+      {/* 底部加载条 */}
+      {phase >= 4 && (
+        <div className="absolute bottom-16 w-56">
+          <div className="h-0.5 bg-border/50 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                background: 'linear-gradient(90deg, #a855f7, #06b6d4, #22c55e)',
+                animation: 'intro-bar-fill 1s ease-out forwards, intro-bar-glow 1s ease-in-out',
+              }}
+            />
+          </div>
+          {/* 加载条端点光球 */}
+          <div
+            className="absolute top-0 w-2 h-0.5 rounded-full bg-white"
+            style={{
+              animation: 'intro-bar-fill 1s ease-out forwards',
+              filter: 'drop-shadow(0 0 4px #a855f7)',
+            }}
+          />
+        </div>
+      )}
+
+      {/* 底部版本信息 */}
+      {phase >= 4 && (
+        <div className="absolute bottom-6 text-center" style={{ animation: 'intro-subtitle-reveal 0.6s ease-out 0.3s forwards' }}>
+          <p className="text-[9px] text-muted-foreground/30 font-mono">v1.0.6 · MJH</p>
         </div>
       )}
     </div>

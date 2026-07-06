@@ -112,17 +112,29 @@
   }
 }
 
-/* ═══ 开场动画 ═══ */
+/* ═══ 开场动画 — 绚丽版 ═══ */
+
 @keyframes intro-zoom {
-  0% { transform: scale(0); opacity: 0; }
-  40% { transform: scale(1.1); opacity: 1; }
-  60% { transform: scale(0.95); }
-  100% { transform: scale(1); opacity: 1; }
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(0deg); opacity: 1; }
+  70% { transform: scale(0.9) rotate(5deg); }
+  85% { transform: scale(1.05) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 @keyframes intro-ring-expand {
   0% { transform: scale(0); opacity: 1; border-width: 4px; }
-  100% { transform: scale(3); opacity: 0; border-width: 1px; }
+  100% { transform: scale(4); opacity: 0; border-width: 1px; }
+}
+
+@keyframes intro-ring-expand-2 {
+  0% { transform: scale(0); opacity: 0.8; border-width: 3px; }
+  100% { transform: scale(5); opacity: 0; border-width: 1px; }
+}
+
+@keyframes intro-ring-expand-3 {
+  0% { transform: scale(0); opacity: 0.6; border-width: 2px; }
+  100% { transform: scale(6); opacity: 0; border-width: 1px; }
 }
 
 @keyframes intro-fade-out {
@@ -131,13 +143,75 @@
 }
 
 @keyframes intro-text-reveal {
-  0% { opacity: 0; transform: translateY(20px); letter-spacing: 0.5em; }
-  100% { opacity: 1; transform: translateY(0); letter-spacing: normal; }
+  0% { opacity: 0; transform: translateY(30px); letter-spacing: 0.8em; filter: blur(10px); }
+  50% { opacity: 0.5; filter: blur(3px); }
+  100% { opacity: 1; transform: translateY(0); letter-spacing: normal; filter: blur(0); }
+}
+
+@keyframes intro-subtitle-reveal {
+  0% { opacity: 0; transform: translateY(15px); }
+  100% { opacity: 0.6; transform: translateY(0); }
 }
 
 @keyframes intro-line-draw {
   0% { stroke-dashoffset: 1000; }
   100% { stroke-dashoffset: 0; }
+}
+
+@keyframes intro-shield-glow {
+  0% { filter: drop-shadow(0 0 0 transparent) brightness(0.3); transform: scale(0.5); }
+  30% { filter: drop-shadow(0 0 20px #a855f7) drop-shadow(0 0 40px #a855f7) brightness(1.5); transform: scale(1.1); }
+  60% { filter: drop-shadow(0 0 15px #a855f7) drop-shadow(0 0 30px #06b6d4) brightness(1.2); transform: scale(1); }
+  100% { filter: drop-shadow(0 0 10px #a855f7) brightness(1); transform: scale(1); }
+}
+
+@keyframes intro-particle-burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+@keyframes intro-scan-sweep {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+@keyframes intro-grid-flash {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+@keyframes intro-bg-pulse {
+  0% { background: radial-gradient(circle at center, rgba(168,85,247,0.15) 0%, transparent 50%); }
+  50% { background: radial-gradient(circle at center, rgba(168,85,247,0.35) 0%, rgba(6,182,212,0.15) 30%, transparent 60%); }
+  100% { background: radial-gradient(circle at center, transparent 0%, transparent 50%); }
+}
+
+@keyframes intro-bar-fill {
+  0% { width: 0%; }
+  20% { width: 15%; }
+  40% { width: 35%; }
+  60% { width: 55%; }
+  80% { width: 80%; }
+  100% { width: 100%; }
+}
+
+@keyframes intro-bar-glow {
+  0%, 100% { box-shadow: 0 0 4px #a855f7; }
+  50% { box-shadow: 0 0 20px #a855f7, 0 0 40px #06b6d4; }
+}
+
+@keyframes intro-layer-icons-fly {
+  0% { transform: translate(var(--start-x), var(--start-y)) scale(0); opacity: 0; }
+  50% { opacity: 0.8; transform: translate(calc(var(--start-x) * 0.3), calc(var(--start-y) * 0.3)) scale(1); }
+  100% { transform: translate(0, 0) scale(0); opacity: 0; }
+}
+
+@keyframes intro-corner-line {
+  0% { width: 0; height: 0; opacity: 0; }
+  30% { opacity: 1; }
+  100% { width: var(--line-w); height: var(--line-h); opacity: 0.6; }
 }
 
 /* ═══ 雷达动画 ═══ */
