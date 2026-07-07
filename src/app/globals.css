@@ -373,3 +373,192 @@
 .terminal-text {
   text-shadow: 0 0 10px currentColor;
 }
+
+/* ═══════════════════════════════════════════════ */
+/* ═══ 电影级·科幻系统深层引导开场 (CinematicGlitchIntro) ═══ */
+/* ═══════════════════════════════════════════════ */
+
+/* 背景隐约的科技网格 */
+.cinematic-grid-overlay {
+  background-image:
+    linear-gradient(rgba(18, 18, 24, 0.7) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 18, 24, 0.7) 1px, transparent 1px);
+  background-size: 30px 30px;
+  background-position: center;
+  opacity: 0.6;
+}
+
+/* 终端启动文本动画 */
+.terminal-boot {
+  opacity: 0;
+  animation: cinematic-fade-in 0.5s 0.3s forwards, cinematic-fade-out 0.4s 1.5s forwards;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: #00ff66;
+  border-radius: 50%;
+  margin-right: 8px;
+  box-shadow: 0 0 8px #00ff66;
+  animation: cinematic-blink 0.4s infinite alternate;
+}
+
+/* 核心: 故障艺术字体设计 */
+.glitch-box {
+  position: relative;
+  opacity: 0;
+  transform: scale(0.9);
+  /* 1.6s 后伴随系统初始化结束, 猛烈爆发 */
+  animation: cinematic-popup-glitch 0.6s 1.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.glitch-title {
+  position: relative;
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+}
+
+/* 利用 ::before 和 ::after 复制两层文本, 制作红青两色错位故障 */
+.glitch-title::before,
+.glitch-title::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #050508;
+  overflow: hidden;
+}
+
+/* 红色极光层 */
+.glitch-title::before {
+  left: 3px;
+  text-shadow: -2px 0 #ff0055;
+  clip: rect(44px, 9999px, 56px, 0);
+  animation: cinematic-glitch-anim-1 1.5s infinite linear alternate-reverse;
+}
+
+/* 青色霓虹层 */
+.glitch-title::after {
+  left: -3px;
+  text-shadow: -2px 0 #00ffff, 0 2px #00ffff;
+  clip: rect(85px, 9999px, 140px, 0);
+  animation: cinematic-glitch-anim-2 1.5s infinite linear alternate-reverse;
+}
+
+/* 动态老旧电视扫描线 */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(180deg, transparent, rgba(0, 255, 102, 0.4), transparent);
+  opacity: 0.5;
+  z-index: 25;
+  animation: cinematic-scan 2.5s linear infinite;
+  pointer-events: none;
+}
+
+/* 故障阶段百分比读数渐入 */
+.cinematic-progress {
+  opacity: 0;
+  animation: cinematic-fade-in 0.4s 1.8s forwards;
+}
+
+/* 闸门破甲提示文字 */
+.cinematic-gate-text {
+  opacity: 0;
+  animation: cinematic-fade-in 0.3s forwards;
+  text-shadow: 0 0 12px #ff0055;
+}
+
+/* 阶段四: 电子闸门 (上下裂开离场) */
+.gate {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: #050508;
+  z-index: 5;
+  transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+.gate-top {
+  top: 0;
+  border-bottom: 1px solid #1a1a24;
+  box-shadow: 0 1px 20px rgba(0, 255, 102, 0.05);
+}
+
+.gate-bottom {
+  bottom: 0;
+  border-top: 1px solid #1a1a24;
+  box-shadow: 0 -1px 20px rgba(0, 255, 102, 0.05);
+}
+
+/* 激活离场状态: 闸门裂开 + 主内容放大虚化 */
+#apex-cinematic-container.gate-open .gate-top {
+  transform: translateY(-100%);
+}
+
+#apex-cinematic-container.gate-open .gate-bottom {
+  transform: translateY(100%);
+}
+
+#apex-cinematic-container.gate-open .cinematic-content {
+  opacity: 0;
+  transform: scale(1.2);
+  transition: opacity 0.5s ease-in, transform 0.5s ease-in;
+}
+
+#apex-cinematic-container.gate-open .scanline {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+/* === 所有的核心动画关键帧 === */
+
+@keyframes cinematic-fade-in {
+  to { opacity: 1; }
+}
+
+@keyframes cinematic-fade-out {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes cinematic-blink {
+  to { opacity: 0.2; }
+}
+
+@keyframes cinematic-popup-glitch {
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cinematic-scan {
+  0% { top: -10%; }
+  100% { top: 110%; }
+}
+
+/* 极其神经质、无规律的裁剪移位, 模拟真实的硬件故障 — 红色层 */
+@keyframes cinematic-glitch-anim-1 {
+  0%   { clip: rect(20px, 9999px, 66px, 0);  transform: skew(0.3deg); }
+  20%  { clip: rect(80px, 9999px, 5px, 0);   transform: skew(0.5deg); }
+  40%  { clip: rect(45px, 9999px, 120px, 0); transform: skew(-0.3deg); }
+  60%  { clip: rect(10px, 9999px, 30px, 0);  transform: skew(0.8deg); }
+  80%  { clip: rect(90px, 9999px, 150px, 0); transform: skew(-0.5deg); }
+  100% { clip: rect(33px, 9999px, 88px, 0);  transform: skew(0deg); }
+}
+
+/* 极其神经质、无规律的裁剪移位 — 青色层 */
+@keyframes cinematic-glitch-anim-2 {
+  0%   { clip: rect(70px, 9999px, 105px, 0); transform: skew(-0.5deg); }
+  25%  { clip: rect(15px, 9999px, 55px, 0);  transform: skew(0.3deg); }
+  50%  { clip: rect(110px, 9999px, 20px, 0); transform: skew(-0.8deg); }
+  75%  { clip: rect(40px, 9999px, 135px, 0); transform: skew(0.5deg); }
+  100% { clip: rect(85px, 9999px, 50px, 0);  transform: skew(0deg); }
+}

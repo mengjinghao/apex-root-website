@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import TopTierIntro from '@/components/TopTierIntro'
+import CinematicGlitchIntro from '@/components/CinematicGlitchIntro'
 import DefenseSandbox from '@/components/DefenseSandbox'
 import CyberTerminal from '@/components/CyberTerminal'
 import {
@@ -954,7 +955,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden flex flex-col">
-      {showIntro && <TopTierIntro isDataLoaded={true} onUnlock={handleIntroComplete} />}
+      {showIntro && <CinematicGlitchIntro isDataLoaded={true} onUnlock={handleIntroComplete} />}
       <ParticleBackground />
       <div className="fixed inset-0 grid-bg pointer-events-none" />
       {scanState === 'scanning' && <div className="scan-overlay" />}
