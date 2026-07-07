@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import TopTierIntro from '@/components/TopTierIntro'
+import DefenseSandbox from '@/components/DefenseSandbox'
+import CyberTerminal from '@/components/CyberTerminal'
 import {
   Shield, Zap, Radar, Terminal, Cpu, Lock, Bug, Eye, EyeOff,
   Gamepad2, Download, Github, AlertTriangle, CheckCircle2, XCircle,
@@ -817,7 +820,7 @@ function ParticleBackground() {
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(true)
-  const [section, setSection] = useState<'hero' | 'scanner' | 'layers' | 'features' | 'download' | 'playground'>('hero')
+  const [section, setSection] = useState<'hero' | 'scanner' | 'layers' | 'features' | 'download' | 'playground' | 'sandbox'>('hero')
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'done'>('idle')
   const [scanMode, setScanMode] = useState<string>('quick')
   const [scanProgress, setScanProgress] = useState(0)
@@ -917,10 +920,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden flex flex-col">
-      {showIntro && <IntroAnimation onComplete={() => setShowIntro(false)} />}
+      {showIntro && <TopTierIntro isDataLoaded={true} onUnlock={() => setShowIntro(false)} />}
       <ParticleBackground />
       <div className="fixed inset-0 grid-bg pointer-events-none" />
       {scanState === 'scanning' && <div className="scan-overlay" />}
+
+      {/* 全局黑客终端 — 按 ` 键唤起 */}
+      {!showIntro && <CyberTerminal />}
 
       {/* 导航 */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/50">
@@ -938,6 +944,7 @@ export default function Home() {
             {[
               { id: 'hero', label: '首页', icon: Play },
               { id: 'scanner', label: '检测台', icon: Radar },
+              { id: 'sandbox', label: '攻防沙盒', icon: Swords },
               { id: 'playground', label: '游乐场', icon: Gamepad2 },
               { id: 'layers', label: '检测层', icon: LayersIcon },
               { id: 'features', label: '功能', icon: Sparkles },
@@ -971,6 +978,9 @@ export default function Home() {
               <motion.div className="flex flex-wrap items-center justify-center gap-3" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
                 <Button size="lg" className="text-base h-12 px-8" style={{ animation: 'pulse-glow 2s ease-in-out infinite' }} onClick={() => { setSection('scanner'); setTimeout(() => startScan('quick'), 400) }}>
                   <Zap className="w-5 h-5 mr-2" />启动检测
+                </Button>
+                <Button size="lg" variant="outline" className="text-base h-12 px-8" onClick={() => setSection('sandbox')}>
+                  <Swords className="w-5 h-5 mr-2" />攻防沙盒
                 </Button>
                 <Button size="lg" variant="outline" className="text-base h-12 px-8" asChild>
                   <a href="https://github.com/mengjinghao/root-check/releases" target="_blank" rel="noopener"><Download className="w-5 h-5 mr-2" />下载 APK</a>
@@ -1076,6 +1086,41 @@ export default function Home() {
                   ))}
                 </div>
               </Card>
+            </motion.div>
+          )}
+
+          {/* ═══ Sandbox — 攻防对抗沙盒 ═══ */}
+          {section === 'sandbox' && (
+            <motion.div key="sandbox" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-black mb-2 gradient-text">攻防对抗沙盒</h2>
+                <p className="text-muted-foreground text-sm">勾选 Root 工具组合 · 模拟 16 层突防 · 看你的方案能撑到第几层</p>
+              </div>
+              <DefenseSandbox />
+
+              <div className="mt-6 grid sm:grid-cols-3 gap-3">
+                <Card className="glass-card p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Flame className="w-4 h-4 text-red-400" />
+                    <span className="font-bold text-sm">应用层 (L1-L4)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">SU 路径、只读分区、包黑名单、构建标签。MagiskHide 即可绕过。</p>
+                </Card>
+                <Card className="glass-card p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Bug className="w-4 h-4 text-cyan-400" />
+                    <span className="font-bold text-sm">Native (L5-L8)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Zygote / Env Path / .so / Inline Hook。Shamiko 是关键。</p>
+                </Card>
+                <Card className="glass-card p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Lock className="w-4 h-4 text-purple-400" />
+                    <span className="font-bold text-sm">TEE 硬件 (L13-L16)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Keystore / AVB / RPMB / Hypervisor。任何软改工具都无法绕过。</p>
+                </Card>
+              </div>
             </motion.div>
           )}
 
