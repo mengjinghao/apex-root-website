@@ -31,6 +31,14 @@ const EXPLOITS = [
 
 type LayerStatus = 'PASSED' | 'BLOCKED' | 'PENDING'
 
+// 预设攻击组合 — 一键体验典型场景
+const PRESETS = [
+  { id: 'rookie', name: '新手 Root', exploits: ['magisk'], desc: '只装 Magisk，无隐藏' },
+  { id: 'stealth', name: '潜伏模式', exploits: ['magisk', 'shamiko'], desc: 'Magisk + Shamiko 隐藏' },
+  { id: 'kernel', name: '内核入侵', exploits: ['ksu', 'custom_kernel'], desc: 'KernelSU + 魔改内核' },
+  { id: 'godmode', name: '神级突防', exploits: ['magisk', 'shamiko', 'ksu', 'custom_kernel'], desc: '全栈武器库' },
+]
+
 export default function DefenseSandbox() {
   // 用户勾选的黑客攻击组件
   const [selectedExploits, setSelectedExploits] = useState<string[]>([])
@@ -40,6 +48,12 @@ export default function DefenseSandbox() {
 
   const toggleExploit = (id: string) => {
     setSelectedExploits((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]))
+  }
+
+  const applyPreset = (exploits: string[]) => {
+    if (scanning) return
+    setSelectedExploits(exploits)
+    setLayerResults({})
   }
 
   const runSimulation = async () => {
@@ -148,6 +162,34 @@ export default function DefenseSandbox() {
                 <p className="text-xs text-muted-foreground mt-1">{exp.desc}</p>
               </div>
             ))}
+          </div>
+
+          {/* 预设攻击组合 */}
+          <div className="mt-5 space-y-2">
+            <label className="text-xs text-muted-foreground font-bold tracking-wider block uppercase">
+              快速预设
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {PRESETS.map((preset) => {
+                const isActive = selectedExploits.length === preset.exploits.length &&
+                  preset.exploits.every((e) => selectedExploits.includes(e))
+                return (
+                  <button
+                    key={preset.id}
+                    onClick={() => applyPreset(preset.exploits)}
+                    disabled={scanning}
+                    className={`p-2 rounded-lg border text-left transition-all text-xs ${
+                      isActive
+                        ? 'border-primary bg-primary/15 text-primary'
+                        : 'border-border/50 bg-secondary/30 hover:border-primary/40 text-muted-foreground'
+                    } ${scanning ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <div className="font-bold font-mono">{preset.name}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">{preset.desc}</div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 

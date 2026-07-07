@@ -831,7 +831,41 @@ export default function Home() {
   const [achievements, setAchievements] = useState<string[]>([])
   const [selectedLayer, setSelectedLayer] = useState<number | null>(null)
   const [gameHighScore, setGameHighScore] = useState(0)
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const intervalsRef = useRef<{ log?: ReturnType<typeof setInterval>; progress?: ReturnType<typeof setInterval> }>({})
+
+  // 首次访问显示开场动画，回访用户自动跳过 (localStorage)
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem('apex-intro-seen')
+      if (seen === '1') {
+        setShowIntro(false)
+      }
+    } catch {
+      // localStorage 不可用 (隐私模式) — 默认显示开场
+    }
+  }, [])
+
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false)
+    try {
+      localStorage.setItem('apex-intro-seen', '1')
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  // 防止开场动画期间页面滚动
+  useEffect(() => {
+    if (showIntro) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showIntro])
 
   useEffect(() => {
     return () => {
@@ -920,7 +954,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden flex flex-col">
-      {showIntro && <TopTierIntro isDataLoaded={true} onUnlock={() => setShowIntro(false)} />}
+      {showIntro && <TopTierIntro isDataLoaded={true} onUnlock={handleIntroComplete} />}
       <ParticleBackground />
       <div className="fixed inset-0 grid-bg pointer-events-none" />
       {scanState === 'scanning' && <div className="scan-overlay" />}
@@ -931,7 +965,7 @@ export default function Home() {
       {/* 导航 */}
       <nav className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button onClick={() => setSection('hero')} className="flex items-center gap-2 group">
+          <button onClick={() => { setSection('hero'); setMobileNavOpen(false) }} className="flex items-center gap-2 group">
             <div className={`relative w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center ${scanState === 'scanning' ? '' : ''}`} style={scanState === 'scanning' ? { animation: 'pulse-glow 2s ease-in-out infinite' } : {}}>
               <Shield className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
             </div>
@@ -958,7 +992,55 @@ export default function Home() {
               <a href="https://github.com/mengjinghao/root-check" target="_blank" rel="noopener"><Github className="w-4 h-4" /></a>
             </Button>
           </div>
+
+          {/* 移动端汉堡菜单按钮 */}
+          <button
+            onClick={() => setMobileNavOpen(prev => !prev)}
+            className="md:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+            aria-label="切换导航菜单"
+          >
+            <span className={`block w-5 h-0.5 bg-foreground transition-all ${mobileNavOpen ? 'rotate-45 translate-y-2' : ''}`} />
+            <span className={`block w-5 h-0.5 bg-foreground transition-all ${mobileNavOpen ? 'opacity-0' : ''}`} />
+            <span className={`block w-5 h-0.5 bg-foreground transition-all ${mobileNavOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+          </button>
         </div>
+
+        {/* 移动端展开菜单 */}
+        {mobileNavOpen && (
+          <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
+            <div className="max-w-5xl mx-auto px-4 py-3 grid grid-cols-3 gap-2">
+              {[
+                { id: 'hero', label: '首页', icon: Play },
+                { id: 'scanner', label: '检测台', icon: Radar },
+                { id: 'sandbox', label: '攻防沙盒', icon: Swords },
+                { id: 'playground', label: '游乐场', icon: Gamepad2 },
+                { id: 'layers', label: '检测层', icon: LayersIcon },
+                { id: 'features', label: '功能', icon: Sparkles },
+                { id: 'download', label: '下载', icon: Download },
+              ].map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setSection(item.id as typeof section); setMobileNavOpen(false) }}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg text-xs transition-all ${
+                    section === item.id ? 'bg-primary/15 text-primary border border-primary/30' : 'text-muted-foreground hover:bg-secondary/40'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </button>
+              ))}
+              <a
+                href="https://github.com/mengjinghao/root-check"
+                target="_blank"
+                rel="noopener"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg text-xs text-muted-foreground hover:bg-secondary/40 transition-all"
+              >
+                <Github className="w-4 h-4" />
+                GitHub
+              </a>
+            </div>
+          </div>
+        )}
       </nav>
 
       <main className="relative z-10 flex-1 max-w-5xl w-full mx-auto px-4 py-8">

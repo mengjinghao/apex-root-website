@@ -61,7 +61,12 @@ export default function CyberTerminal() {
           { text: '  su / root    - 模拟一次恶意特权提升尝试。', type: 'info' },
           { text: '  scan --fast  - 触发高速微内核巡检。', type: 'info' },
           { text: '  layers       - 列出全部 16 层架构。', type: 'info' },
+          { text: '  magisk       - 查询 Magisk 检测策略。', type: 'info' },
+          { text: '  ksu          - 查询 KernelSU 检测策略。', type: 'info' },
+          { text: '  frida        - 查询 Frida 动态注入检测。', type: 'info' },
+          { text: '  shamiko      - 查询 Shamiko 隐藏对抗。', type: 'info' },
           { text: '  whoami       - 显示当前用户身份。', type: 'info' },
+          { text: '  banner       - 打印 APEX-Root ASCII 横幅。', type: 'info' },
           { text: '  clear        - 清空战术屏幕。', type: 'info' },
         )
         break
@@ -97,8 +102,54 @@ export default function CyberTerminal() {
           { text: 'L13-L16 TEE: Keystore / AVB 2.0 / RPMB / Hypervisor', type: 'info' },
         )
         break
+      case 'magisk':
+        newLogs.push(
+          { text: '[Magisk 检测策略]', type: 'info' },
+          { text: '  → L3: 内存匿名映射特征匹配 (0x7f3a2b)', type: 'info' },
+          { text: '  → L6: magiskd 进程枚举 (/proc/*/cmdline)', type: 'info' },
+          { text: '  → L8: /data/adb/magisk 路径存在性', type: 'info' },
+          { text: '  → L16: DenyList 配置文件扫描', type: 'info' },
+          { text: '绕过难度: 中 (MagiskHide + Zygisk 可过 L1-L4)', type: 'warn' },
+        )
+        break
+      case 'ksu':
+        newLogs.push(
+          { text: '[KernelSU 检测策略]', type: 'info' },
+          { text: '  → L9: 直接 SVC syscall 完整性监测', type: 'info' },
+          { text: '  → L11: Kallsyms 驱动符号表扫描', type: 'info' },
+          { text: '  → L12: SELinux Enforcing 状态强制', type: 'info' },
+          { text: '绕过难度: 高 (需自定义 BPF 内核补丁才能过 L9-L12)', type: 'warn' },
+        )
+        break
+      case 'frida':
+        newLogs.push(
+          { text: '[Frida 动态注入检测]', type: 'info' },
+          { text: '  → L2: /proc/self/maps 中 frida-agent.so 映射', type: 'info' },
+          { text: '  → L2: 端口 27042 监听检测', type: 'info' },
+          { text: '  → L2: 线程名 gum-js-loop 枚举', type: 'info' },
+          { text: '绕过难度: 中 (需 frida-gadget 重命名 + 端口转发)', type: 'warn' },
+        )
+        break
+      case 'shamiko':
+        newLogs.push(
+          { text: '[Shamiko 隐藏对抗]', type: 'info' },
+          { text: '  → L5: Zygote 内存 Fork 异常检测', type: 'info' },
+          { text: '  → L7: 动态链接器 .so 注入指纹', type: 'info' },
+          { text: '  → L8: Inline Assembly Hook 扫描', type: 'info' },
+          { text: '绕过难度: 极高 (Shamiko 可过 L5-L8，但 L13+ 硬件层无法绕过)', type: 'error' },
+        )
+        break
       case 'whoami':
         newLogs.push({ text: 'guest (unprivileged) — UID 10042', type: 'success' })
+        break
+      case 'banner':
+        newLogs.push(
+          { text: '    ___   ____ _____ ____  ', type: 'success' },
+          { text: '   / _ | / __// ___// __/ ', type: 'success' },
+          { text: '  / __ |/ _/ / /   / _/   ', type: 'success' },
+          { text: ' /_/ |_/___//_/  /___/   ', type: 'success' },
+          { text: ' 16-Layer Root Detection Engine v1.0.6', type: 'info' },
+        )
         break
       case '':
         // 空指令，忽略
