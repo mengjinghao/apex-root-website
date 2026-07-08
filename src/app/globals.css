@@ -562,3 +562,68 @@
   75%  { clip: rect(40px, 9999px, 135px, 0); transform: skew(0.5deg); }
   100% { clip: rect(85px, 9999px, 50px, 0);  transform: skew(0deg); }
 }
+
+/* ═══════════════════════════════════════════════ */
+/* ═══ 鼠标重力黑洞粒子开场 (GravityWellIntro) ═══ */
+/* ═══════════════════════════════════════════════ */
+
+/* CRT 赛博朋克扫描线滤镜 — 全局覆盖 */
+.scanlines {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 4px, 6px 100%;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* 液压机械舱门样式 */
+.shutter {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  background: #0d0d11;
+  border: 2px solid rgba(0, 255, 102, 0.2);
+  transition: transform 1.2s cubic-bezier(0.77, 0, 0.175, 1);
+  z-index: 50;
+}
+
+.shutter-top {
+  top: 0;
+  transform-origin: top;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.shutter-bottom {
+  bottom: 0;
+  transform-origin: bottom;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+}
+
+/* 系统解锁: 液压舱门上下滑开 */
+#gravity-intro-container.system-unlocked .shutter-top {
+  transform: translateY(-100%);
+}
+
+#gravity-intro-container.system-unlocked .shutter-bottom {
+  transform: translateY(100%);
+}
+
+/* 文字故障风格动画 (hover 触发) */
+@keyframes gravity-glitch {
+  0%   { transform: translate(0); }
+  20%  { transform: translate(-2px, 2px); }
+  40%  { transform: translate(-2px, -2px); }
+  60%  { transform: translate(2px, 2px); }
+  80%  { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.glitch-text:hover {
+  animation: gravity-glitch 0.3s linear infinite;
+  color: #00ff66;
+  text-shadow: 2px 0 #ff0055, -2px 0 #00ffff;
+}

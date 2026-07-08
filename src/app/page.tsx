@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import TopTierIntro from '@/components/TopTierIntro'
 import CinematicGlitchIntro from '@/components/CinematicGlitchIntro'
+import GravityWellIntro from '@/components/GravityWellIntro'
 import DefenseSandbox from '@/components/DefenseSandbox'
 import CyberTerminal from '@/components/CyberTerminal'
 import {
@@ -955,7 +956,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden flex flex-col">
-      {showIntro && <CinematicGlitchIntro isDataLoaded={true} onUnlock={handleIntroComplete} />}
+      {showIntro && <GravityWellIntro isDataLoaded={true} onUnlock={handleIntroComplete} />}
+      {/* CRT 赛博朋克扫描线滤镜 — 全局覆盖 */}
+      <div className="scanlines" aria-hidden="true" />
       <ParticleBackground />
       <div className="fixed inset-0 grid-bg pointer-events-none" />
       {scanState === 'scanning' && <div className="scan-overlay" />}

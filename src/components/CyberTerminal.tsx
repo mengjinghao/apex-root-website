@@ -8,6 +8,45 @@ interface LogLine {
 }
 
 /**
+ * root-check 扫描流水线 — 模拟底层逐项审计
+ * 逐项检查 SU Binary / Zygisk Hooks / SELinux, 最终输出风险评级
+ */
+type SetLogsFn = React.Dispatch<React.SetStateAction<LogLine[]>>
+
+function runRootCheckSequence(setLogs: SetLogsFn) {
+  const routines: { wait: string; done: string; type: LogLine['type'] }[] = [
+    { wait: '[WAIT] Inspecting System Binary Paths /system/bin/su ...', done: '[✔] SU Binary: [DETECTED] /system/bin/su 存在', type: 'error' },
+    { wait: '[WAIT] Tracking Zygisk active environment method handles ...', done: '[✔] Zygisk: [HOOKED] 检测到 Zygote 注入', type: 'error' },
+    { wait: '[WAIT] Scanning Kernel enforcing policies (SELinux) ...', done: '[✔] SELinux: [PERMISSIVE] 内核策略宽松', type: 'warn' },
+    { wait: '[WAIT] Probing TEE Hardware KeyAttestation ...', done: '[✔] TEE: [VALID] 硬件证明通过', type: 'success' },
+  ]
+
+  let index = 0
+  function runNext() {
+    if (index >= routines.length) {
+      setTimeout(() => {
+        setLogs((prev) => [
+          ...prev,
+          { text: '[CRITICAL] 审计扫描完成。风险评估值稳定。DEVICE INTEGRITY: BREACHED/ROOTED.', type: 'error' },
+          { text: '═══════════════════════════════════════', type: 'warn' },
+          { text: 'SAFETY INDEX: 15%  |  Root 检测: POSITIVE  |  建议: 启用 Hide 模式', type: 'warn' },
+        ])
+      }, 500)
+      return
+    }
+    const step = routines[index]
+    if (!step) return
+    setLogs((prev) => [...prev, { text: step.wait, type: 'info' }])
+    setTimeout(() => {
+      setLogs((prev) => [...prev, { text: step.done, type: step.type }])
+      index++
+      runNext()
+    }, 900)
+  }
+  runNext()
+}
+
+/**
  * 全局黑客后门终端
  *  - 按 ` 键 (Tab 上方) 切换开关
  *  - 输入 su / root 触发系统防线报警
@@ -57,6 +96,9 @@ export default function CyberTerminal() {
       case 'help':
         newLogs.push(
           { text: '可用指令:', type: 'info' },
+          { text: '  help         - 输出指令集矩阵。', type: 'info' },
+          { text: '  root-check   - 执行模块化环境审计验证流水线。', type: 'info' },
+          { text: '  apex         - 建立与 AI 中央集群的连接矩阵。', type: 'info' },
           { text: '  status       - 检查 16 层防御核心健康状态。', type: 'info' },
           { text: '  su / root    - 模拟一次恶意特权提升尝试。', type: 'info' },
           { text: '  scan --fast  - 触发高速微内核巡检。', type: 'info' },
@@ -70,6 +112,22 @@ export default function CyberTerminal() {
           { text: '  clear        - 清空战术屏幕。', type: 'info' },
         )
         break
+      case 'root-check':
+        newLogs.push({ text: '[~] 启动环境安全向量追踪...', type: 'info' })
+        setLogs(newLogs)
+        // 模拟 root-check 逐项扫描流水线
+        runRootCheckSequence(setLogs)
+        return
+      case 'apex':
+        newLogs.push({ text: '[CONNECTING] 正在连接中央 Core Cluster Agent...', type: 'info' })
+        setLogs(newLogs)
+        setTimeout(() => {
+          setLogs((prev) => [
+            ...prev,
+            { text: '[ONLINE] Core agent 已唤醒。正在监听仓库优化指令。Secure shell bypass 稳定。', type: 'success' },
+          ])
+        }, 800)
+        return
       case 'status':
         newLogs.push(
           { text: '[L1-L4]  用户空间完整性: SECURE', type: 'success' },
