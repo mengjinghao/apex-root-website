@@ -52,11 +52,18 @@ export default function CinematicGlitchIntro({ isDataLoaded = true, onUnlock }: 
   const bootIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const phaseRef = useRef<'boot' | 'glitch' | 'gate'>('boot')
   // 保存最新的 onUnlock 回调, 避免 triggerGateOpen 依赖它而导致 effect 重跑
   const onUnlockRef = useRef(onUnlock)
   useEffect(() => {
     onUnlockRef.current = onUnlock
   }, [onUnlock])
+
+  // 同步 phase 到 ref, 供 Canvas 粒子循环读取最新阶段而无需重启 effect
+  useEffect(() => {
+    phaseRef.current = phase
+  }, [phase])
 
   // 添加 timer 到 ref 数组, 便于卸载时统一清理
   const addTimer = (fn: () => void, delay: number) => {
@@ -172,6 +179,112 @@ export default function CinematicGlitchIntro({ isDataLoaded = true, onUnlock }: 
     }
   }, [])
 
+  // === Canvas 粒子系统 — 配合三阶段叙事动态变色 ===
+  // boot 阶段: 绿色 0xEF 碎片缓慢上浮
+  // glitch 阶段: 红/青双色高频抖动 + 加速
+  // gate 阶段: 全部粒子向中心崩塌吸入
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animationFrameId = 0
+    let width = (canvas.width = window.innerWidth)
+    let height = (canvas.height = window.innerHeight)
+
+    const handleResize = () => {
+      width = canvas.width = window.innerWidth
+      height = canvas.height = window.innerHeight
+    }
+    window.addEventListener('resize', handleResize)
+
+    // 粒子初始化 — 二进制 / 十六进制碎片
+    const PARTICLE_COUNT = 90
+    const GLYPHS = ['0xEF', '0x7F', '0x00', '1', '0', 'FF', '7F', 'A5']
+    interface Particle {
+      x: number; y: number; vx: number; vy: number;
+      size: number; alpha: number; glyph: string; jitter: number;
+    }
+    const particles: Particle[] = []
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: Math.random() * 0.5 + 0.2,
+        size: Math.random() * 2 + 1,
+        alpha: Math.random() * 0.5 + 0.15,
+        glyph: GLYPHS[Math.floor(Math.random() * GLYPHS.length)] || '0xEF',
+        jitter: Math.random() * 2,
+      })
+    }
+
+    const draw = () => {
+      // 半透明拖影 — 与背景 #050508 对齐
+      ctx.fillStyle = 'rgba(5, 5, 8, 0.18)'
+      ctx.fillRect(0, 0, width, height)
+
+      const currentPhase = phaseRef.current
+      const centerX = width / 2
+      const centerY = height / 2
+
+      particles.forEach((p) => {
+        if (currentPhase === 'gate') {
+          // 阶段 4: 粒子向中心崩塌吸入
+          const dx = centerX - p.x
+          const dy = centerY - p.y
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.001
+          const force = Math.min(8, 400 / dist)
+          p.x += (dx / dist) * force
+          p.y += (dy / dist) * force
+          // 被吞噬后从外围重生
+          if (dist < 15) {
+            const angle = Math.random() * Math.PI * 2
+            const radius = Math.max(width, height) * 0.6
+            p.x = centerX + Math.cos(angle) * radius
+            p.y = centerY + Math.sin(angle) * radius
+          }
+          ctx.fillStyle = `rgba(0, 255, 102, ${p.alpha})` // 绿色 — 系统已通
+        } else if (currentPhase === 'glitch') {
+          // 阶段 3: 红青双色高频抖动
+          p.x += p.vx * 3 + (Math.random() - 0.5) * p.jitter * 2
+          p.y += p.vy * 2
+          // 红青随机切换
+          const useRed = Math.random() > 0.5
+          ctx.fillStyle = useRed
+            ? `rgba(255, 0, 85, ${p.alpha + 0.2})`
+            : `rgba(0, 255, 255, ${p.alpha + 0.2})`
+        } else {
+          // 阶段 1: 绿色缓慢上浮
+          p.x += p.vx
+          p.y -= p.vy
+          if (p.y < -10) p.y = height + 10
+          if (p.x < -10) p.x = width + 10
+          if (p.x > width + 10) p.x = -10
+          ctx.fillStyle = `rgba(0, 255, 102, ${p.alpha * 0.6})`
+        }
+
+        // 偶尔以文字形式渲染, 否则用方块
+        if (Math.random() > 0.85) {
+          ctx.font = '9px monospace'
+          ctx.fillText(p.glyph, p.x, p.y)
+        } else {
+          ctx.fillRect(p.x, p.y, p.size, p.size)
+        }
+      })
+
+      animationFrameId = requestAnimationFrame(draw)
+    }
+
+    draw()
+
+    return () => {
+      cancelAnimationFrame(animationFrameId)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
+
   return (
     <div
       id="apex-cinematic-container"
@@ -182,6 +295,9 @@ export default function CinematicGlitchIntro({ isDataLoaded = true, onUnlock }: 
     >
       {/* 背景科技网格线条 */}
       <div className="absolute inset-0 cinematic-grid-overlay" aria-hidden="true" />
+
+      {/* Canvas 粒子系统 — 配合三阶段叙事动态变色 */}
+      <canvas ref={canvasRef} className="absolute inset-0 block pointer-events-none z-[1]" aria-hidden="true" />
 
       {/* 四角战术边框 UI — 强化电影感 */}
       <div className="absolute top-6 left-6 w-8 h-8 border-t-2 border-l-2 border-[#1a1a24] z-30" aria-hidden="true" />
