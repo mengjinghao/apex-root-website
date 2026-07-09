@@ -144,9 +144,9 @@ export default function GravityWellIntro({ isDataLoaded = true, onUnlock }: Grav
 
       const centerX = width / 2
       const centerY = height / 2
-      // 判断鼠标是否靠近中央 Breach 按钮 (半径 150px)
+      // 判断鼠标是否靠近中央 Breach 按钮 (半径 280px, 较大范围便于触发)
       const distMouseToCenter = Math.hypot(mouseRef.current.x - centerX, mouseRef.current.y - centerY)
-      const isHoveringCenter = distMouseToCenter < 150
+      const isHoveringCenter = distMouseToCenter < 280
 
       particles.forEach((p) => {
         if (isHoveringCenter) {
@@ -155,17 +155,17 @@ export default function GravityWellIntro({ isDataLoaded = true, onUnlock }: Grav
           const dy = centerY - p.y
           const dist = Math.sqrt(dx * dx + dy * dy) || 0.001
           // 越靠近中心, 引力越强
-          const force = Math.min(0.08, 8 / dist)
-          p.x += (dx / dist) * force * 6
-          p.y += (dy / dist) * force * 6
+          const force = Math.min(0.15, 12 / dist)
+          p.x += (dx / dist) * force * 8
+          p.y += (dy / dist) * force * 8
           // 被中心吞噬后从外围重生
-          if (dist < 15) {
+          if (dist < 20) {
             const angle = Math.random() * Math.PI * 2
             const radius = Math.max(width, height) * 0.5
             p.x = centerX + Math.cos(angle) * radius
             p.y = centerY + Math.sin(angle) * radius
           }
-          p.alpha = 0.9 // 激活高亮
+          p.alpha = 0.95 // 激活高亮
         } else {
           // 鼠标不在中心区域, 粒子利用阻尼运动平滑归位
           if (p.x !== p.baseX) {
@@ -183,6 +183,19 @@ export default function GravityWellIntro({ isDataLoaded = true, onUnlock }: Grav
         ctx.font = `${Math.floor(p.size * 3) + 8}px 'Share Tech Mono', monospace`
         ctx.fillText(p.text, p.x, p.y)
       })
+
+      // 绘制中心黑洞光晕 (鼠标靠近时显现)
+      if (isHoveringCenter) {
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 120)
+        gradient.addColorStop(0, isGolden ? 'rgba(234, 179, 8, 0.5)' : 'rgba(0, 255, 102, 0.5)')
+        gradient.addColorStop(0.5, isGolden ? 'rgba(234, 179, 8, 0.15)' : 'rgba(0, 255, 102, 0.15)')
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
+        ctx.globalAlpha = 1
+        ctx.fillStyle = gradient
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, 120, 0, Math.PI * 2)
+        ctx.fill()
+      }
 
       animationFrameId = requestAnimationFrame(draw)
     }
@@ -225,8 +238,8 @@ export default function GravityWellIntro({ isDataLoaded = true, onUnlock }: Grav
         <div className="h-1 w-32 bg-cyan-500/50 rounded-full mt-[-2px] animate-pulse" />
       </div>
 
-      {/* Canvas 粒子层 */}
-      <canvas ref={canvasRef} className="absolute inset-0 z-10 opacity-70 pointer-events-none" />
+      {/* Canvas 粒子层 — z-60 高于舱门 z-50, 粒子在舱门之上可见 */}
+      <canvas ref={canvasRef} className="absolute inset-0 z-[60] opacity-80 pointer-events-none" />
 
       {/* 主内容区 */}
       <div className="z-20 text-center flex flex-col items-center px-4">
