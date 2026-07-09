@@ -142,22 +142,32 @@ export default function GravityWellIntro({ isDataLoaded = true, onUnlock }: Grav
     const draw = () => {
       ctx.clearRect(0, 0, width, height)
 
-      particles.forEach((p) => {
-        // 计算粒子与鼠标的物理距离
-        const dx = mouseRef.current.x - p.x
-        const dy = mouseRef.current.y - p.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
+      const centerX = width / 2
+      const centerY = height / 2
+      // 判断鼠标是否靠近中央 Breach 按钮 (半径 150px)
+      const distMouseToCenter = Math.hypot(mouseRef.current.x - centerX, mouseRef.current.y - centerY)
+      const isHoveringCenter = distMouseToCenter < 150
 
-        if (distance < mouseRef.current.radius && distance > 0.001) {
-          // 黑洞向心力: 越靠近引力核心, 吸附感越强
-          const force = (mouseRef.current.radius - distance) / mouseRef.current.radius
-          const directionX = (dx / distance) * force * p.density * 0.6
-          const directionY = (dy / distance) * force * p.density * 0.6
-          p.x += directionX
-          p.y += directionY
+      particles.forEach((p) => {
+        if (isHoveringCenter) {
+          // 鼠标靠近中心时, 粒子吸向中心 Breach 按钮 (黑洞引力)
+          const dx = centerX - p.x
+          const dy = centerY - p.y
+          const dist = Math.sqrt(dx * dx + dy * dy) || 0.001
+          // 越靠近中心, 引力越强
+          const force = Math.min(0.08, 8 / dist)
+          p.x += (dx / dist) * force * 6
+          p.y += (dy / dist) * force * 6
+          // 被中心吞噬后从外围重生
+          if (dist < 15) {
+            const angle = Math.random() * Math.PI * 2
+            const radius = Math.max(width, height) * 0.5
+            p.x = centerX + Math.cos(angle) * radius
+            p.y = centerY + Math.sin(angle) * radius
+          }
           p.alpha = 0.9 // 激活高亮
         } else {
-          // 鼠标移开后, 粒子利用阻尼运动平滑归位
+          // 鼠标不在中心区域, 粒子利用阻尼运动平滑归位
           if (p.x !== p.baseX) {
             p.x -= (p.x - p.baseX) / 20
           }
@@ -258,6 +268,15 @@ export default function GravityWellIntro({ isDataLoaded = true, onUnlock }: Grav
           PRO TIP: TRY ENTERING THE REBEL CODE (KONAMI) OR &quot;apex&quot; ANYWHERE
         </p>
       </div>
+
+      {/* 黄金彩蛋: ACCESS GRANTED 全屏覆盖文字 */}
+      {isGolden && !unlocked && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none mix-blend-screen animate-pulse">
+          <h1 className="text-6xl md:text-8xl font-black text-yellow-500 tracking-tighter opacity-50 select-none">
+            ACCESS GRANTED
+          </h1>
+        </div>
+      )}
     </div>
   )
 }
